@@ -42,6 +42,7 @@
     <button class="type-btn" data-type="quiz">❓<br>Quiz<br><span>Eigene Fragen stellen</span></button>
     <button class="type-btn" data-type="memory">🧠<br>Memory<br><span>Kartenpaare finden</span></button>
     <button class="type-btn" data-type="jump">🏃<br>Hüpf-Spiel<br><span>Hindernissen ausweichen</span></button>
+    <button class="type-btn" data-type="blocks">🧩<br>Eigenes Spiel<br><span>Mit Bausteinen programmieren</span></button>
   </div>
   <button id="btn-cancel-typepicker" class="big-btn secondary">⬅ Zurück</button>
 </section>
@@ -189,6 +190,41 @@
   <div class="editor-actions">
     <button id="btn-restart-jump-play" class="big-btn secondary">🔄 Neu starten</button>
     <button id="btn-back-jump-play" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- BLOCKS EDITOR -->
+<section id="screen-blocks-editor" class="screen hidden">
+  <h2>🧩 Baue dein eigenes Spiel</h2>
+  <input id="blocks-name" class="name-input" placeholder="Name deines Spiels" maxlength="30">
+
+  <div class="tab-bar">
+    <button class="tab-btn" data-tab="sprites">🖼️ Figuren</button>
+    <button class="tab-btn" data-tab="stage">🏞️ Bühne</button>
+    <button class="tab-btn" data-tab="scripts">🧩 Skripte</button>
+  </div>
+
+  <div id="blocks-tab-sprites" class="tab-content"></div>
+  <div id="blocks-tab-stage" class="tab-content hidden"></div>
+  <div id="blocks-tab-scripts" class="tab-content hidden"></div>
+
+  <div class="editor-actions">
+    <button id="btn-save-blocks" class="big-btn primary">💾 Speichern</button>
+    <button id="btn-cancel-blocks-editor" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- BLOCKS PLAY -->
+<section id="screen-blocks-play" class="screen hidden">
+  <h2 id="blocks-play-title">🧩 Spielen</h2>
+  <div class="hud">
+    <span id="blocks-score-display">⭐ 0</span>
+    <span id="blocks-play-message"></span>
+  </div>
+  <canvas id="blocks-canvas" width="320" height="200"></canvas>
+  <div class="editor-actions">
+    <button id="btn-restart-blocks-play" class="big-btn secondary">🔄 Neu starten</button>
+    <button id="btn-back-blocks-play" class="big-btn secondary">⬅ Zurück</button>
   </div>
 </section>
 

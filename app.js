@@ -8,6 +8,7 @@ const TYPE_META = {
   quiz: { icon: "❓", label: "Quiz" },
   memory: { icon: "🧠", label: "Memory" },
   jump: { icon: "🏃", label: "Hüpf-Spiel" },
+  blocks: { icon: "🧩", label: "Eigenes Spiel" },
 };
 
 // ---------- Storage helpers ----------
@@ -200,6 +201,7 @@ function playGame(id) {
   else if (game.type === "quiz") startQuizPlay(game);
   else if (game.type === "memory") startMemoryPlay(game);
   else if (game.type === "jump") startJumpPlay(game);
+  else if (game.type === "blocks") startBlocksPlay(game);
 }
 
 function editGame(id) {
@@ -209,10 +211,12 @@ function editGame(id) {
   else if (game.type === "quiz") openQuizEditor(JSON.parse(JSON.stringify(game)));
   else if (game.type === "memory") openMemoryEditor(JSON.parse(JSON.stringify(game)));
   else if (game.type === "jump") openJumpEditor(JSON.parse(JSON.stringify(game)));
+  else if (game.type === "blocks") openBlocksEditor(JSON.parse(JSON.stringify(game)));
 }
 
 function stopAllGameLoops() {
   stopJumpLoop();
+  stopBlocksLoop();
 }
 
 document.getElementById("btn-new-game").addEventListener("click", () => {
@@ -228,6 +232,7 @@ document.querySelectorAll(".type-btn").forEach((btn) => {
     else if (type === "quiz") openQuizEditor(null);
     else if (type === "memory") openMemoryEditor(null);
     else if (type === "jump") openJumpEditor(null);
+    else if (type === "blocks") openBlocksEditor(null);
   });
 });
 
@@ -928,6 +933,981 @@ document.getElementById("btn-restart-jump-play").addEventListener("click", () =>
 });
 document.getElementById("btn-back-jump-play").addEventListener("click", () => {
   stopJumpLoop();
+  showScreen("home");
+  renderHome();
+});
+
+// ============================================================
+// BLOCKS ("Eigenes Spiel" — Baukasten wie MakeCode)
+// ============================================================
+
+const SPRITE_SIZE = 10;
+const PIXEL_COLORS = ["#e74c3c","#e67e22","#f1c40f","#2ecc71","#1abc9c","#3498db","#9b59b6","#e84393","#795548","#000000","#ffffff","#95a5a6"];
+const STAGE_COLS = 10, STAGE_ROWS = 6;
+const BLOCKS_CANVAS_W = 320, BLOCKS_CANVAS_H = 200;
+const SPRITE_DRAW_PX = 24;
+const TOUCH_THRESHOLD_X = (SPRITE_DRAW_PX / BLOCKS_CANVAS_W) * 100;
+const TOUCH_THRESHOLD_Y = (SPRITE_DRAW_PX / BLOCKS_CANVAS_H) * 100;
+const EDGE_MARGIN_X = TOUCH_THRESHOLD_X / 2;
+const EDGE_MARGIN_Y = TOUCH_THRESHOLD_Y / 2;
+
+const BLOCK_CATEGORY_LABELS = {
+  bewegen: "🏃 Bewegen", aussehen: "👀 Aussehen", ton: "🔊 Ton",
+  punkte: "⭐ Punkte", steuerung: "🔁 Steuerung", spiel: "🏁 Spiel-Ende",
+};
+
+const BLOCK_DEFS = {
+  move: { cat: "bewegen", label: "Bewege", params: [
+    { name: "sprite", type: "sprite" },
+    { name: "dx", type: "number", label: "X", default: 5 },
+    { name: "dy", type: "number", label: "Y", default: 0 },
+  ]},
+  setPos: { cat: "bewegen", label: "Setze Position von", params: [
+    { name: "sprite", type: "sprite" },
+    { name: "x", type: "number", label: "X", default: 50 },
+    { name: "y", type: "number", label: "Y", default: 50 },
+  ]},
+  setVelocity: { cat: "bewegen", label: "Setze Geschwindigkeit von", params: [
+    { name: "sprite", type: "sprite" },
+    { name: "vx", type: "number", label: "X/Sek", default: 10 },
+    { name: "vy", type: "number", label: "Y/Sek", default: 0 },
+  ]},
+  bounce: { cat: "bewegen", label: "Lasse am Rand abprallen:", params: [
+    { name: "sprite", type: "sprite" },
+  ]},
+  showText: { cat: "aussehen", label: "Zeige Text", params: [
+    { name: "text", type: "text", default: "Hallo!" },
+    { name: "seconds", type: "number", label: "Sek.", default: 2 },
+  ]},
+  setVisible: { cat: "aussehen", label: "Figur", params: [
+    { name: "sprite", type: "sprite" },
+    { name: "visible", type: "select", default: "true", options: [
+      { value: "true", label: "zeigen" }, { value: "false", label: "verstecken" },
+    ]},
+  ]},
+  playSound: { cat: "ton", label: "Spiele Ton", params: [
+    { name: "tone", type: "select", default: "mid", options: [
+      { value: "low", label: "tief" }, { value: "mid", label: "mittel" }, { value: "high", label: "hoch" },
+    ]},
+  ]},
+  changeScore: { cat: "punkte", label: "Ändere Punktzahl um", params: [
+    { name: "amount", type: "number", default: 1 },
+  ]},
+  setScore: { cat: "punkte", label: "Setze Punktzahl auf", params: [
+    { name: "amount", type: "number", default: 0 },
+  ]},
+  wait: { cat: "steuerung", label: "Warte", params: [
+    { name: "seconds", type: "number", label: "Sek.", default: 1 },
+  ]},
+  repeat: { cat: "steuerung", label: "Wiederhole", params: [
+    { name: "count", type: "number", default: 5 },
+  ], hasBody: true },
+  ifBlock: { cat: "steuerung", label: "Falls", params: [
+    { name: "condition", type: "condition" },
+  ], hasBody: true, hasElse: true },
+  endGame: { cat: "spiel", label: "Beende Spiel:", params: [
+    { name: "result", type: "select", default: "win", options: [
+      { value: "win", label: "🏆 gewonnen" }, { value: "lose", label: "😵 verloren" },
+    ]},
+    { name: "message", type: "text", default: "Geschafft!" },
+  ]},
+};
+
+const EVENT_DEFS = {
+  start: { label: "🏁 Beim Start", params: [] },
+  forever: { label: "🔁 Dauerschleife", params: [] },
+  key: { label: "⌨️ Bei Tastendruck", params: [{ name: "key", type: "key", default: "ArrowUp" }] },
+  collision: { label: "💥 Bei Berührung", params: [
+    { name: "spriteA", type: "sprite", default: "" }, { name: "spriteB", type: "sprite", default: "" },
+  ]},
+  timer: { label: "⏱️ Alle X Sekunden", params: [{ name: "seconds", type: "number", default: 3 }] },
+};
+
+// ---------- Sprite drawing helpers ----------
+
+function makeEmptySpritePixels() {
+  return Array.from({ length: SPRITE_SIZE }, () => Array.from({ length: SPRITE_SIZE }, () => null));
+}
+
+function drawSpriteOnCanvas(canvas, sprite) {
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!sprite) return;
+  const cell = canvas.width / SPRITE_SIZE;
+  for (let r = 0; r < SPRITE_SIZE; r++) {
+    for (let c = 0; c < SPRITE_SIZE; c++) {
+      const color = sprite.pixels[r][c];
+      if (color) { ctx.fillStyle = color; ctx.fillRect(c * cell, r * cell, cell, cell); }
+    }
+  }
+}
+
+function drawSpriteAt(ctx, sprite, px, py, size) {
+  if (!sprite) return;
+  const cell = size / SPRITE_SIZE;
+  const startX = px - size / 2, startY = py - size / 2;
+  for (let r = 0; r < SPRITE_SIZE; r++) {
+    for (let c = 0; c < SPRITE_SIZE; c++) {
+      const color = sprite.pixels[r][c];
+      if (color) { ctx.fillStyle = color; ctx.fillRect(startX + c * cell, startY + r * cell, cell, cell); }
+    }
+  }
+}
+
+// ---------- Generic param controls ----------
+
+let listeningBlockKeyCallback = null;
+
+document.addEventListener("keydown", (e) => {
+  if (!listeningBlockKeyCallback) return;
+  e.preventDefault();
+  const cb = listeningBlockKeyCallback;
+  listeningBlockKeyCallback = null;
+  if (e.key !== "Escape") cb(e.key);
+});
+
+function getInstanceOptions() {
+  const options = blocksGame.config.instances.map((i) => ({ value: i.id, label: i.name }));
+  return options.length ? options : [{ value: "", label: "(keine Figur)" }];
+}
+
+function makeParamControl(param, currentValue, onChange) {
+  const wrap = document.createElement("span");
+  wrap.style.display = "inline-flex";
+  wrap.style.alignItems = "center";
+  wrap.style.gap = "3px";
+  if (param.label) {
+    const lbl = document.createElement("span");
+    lbl.textContent = param.label + ":";
+    wrap.appendChild(lbl);
+  }
+  if (param.type === "number") {
+    const input = document.createElement("input");
+    input.type = "number";
+    input.value = currentValue;
+    input.addEventListener("change", () => onChange(parseFloat(input.value) || 0));
+    wrap.appendChild(input);
+  } else if (param.type === "text") {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentValue;
+    input.addEventListener("change", () => onChange(input.value));
+    wrap.appendChild(input);
+  } else if (param.type === "select") {
+    const select = document.createElement("select");
+    param.options.forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt.value; o.textContent = opt.label;
+      if (String(opt.value) === String(currentValue)) o.selected = true;
+      select.appendChild(o);
+    });
+    select.addEventListener("change", () => onChange(select.value));
+    wrap.appendChild(select);
+  } else if (param.type === "sprite") {
+    const select = document.createElement("select");
+    const options = getInstanceOptions();
+    let value = currentValue;
+    if (!options.some((o) => o.value === value) && options.length) value = options[0].value;
+    options.forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt.value; o.textContent = opt.label;
+      if (opt.value === value) o.selected = true;
+      select.appendChild(o);
+    });
+    if (value !== currentValue) onChange(value);
+    select.addEventListener("change", () => onChange(select.value));
+    wrap.appendChild(select);
+  } else if (param.type === "key") {
+    const badge = document.createElement("span");
+    badge.className = "key-badge";
+    badge.textContent = keyLabel(currentValue);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-change-key";
+    btn.textContent = "Taste wählen";
+    btn.addEventListener("click", () => {
+      badge.textContent = "Drücke...";
+      badge.classList.add("listening");
+      listeningBlockKeyCallback = (key) => onChange(key);
+    });
+    wrap.appendChild(badge);
+    wrap.appendChild(btn);
+  }
+  return wrap;
+}
+
+function makeConditionControl(condition, rerender) {
+  const wrap = document.createElement("span");
+  wrap.style.display = "inline-flex";
+  wrap.style.alignItems = "center";
+  wrap.style.gap = "4px";
+  wrap.style.flexWrap = "wrap";
+
+  const typeSelect = document.createElement("select");
+  [["touching", "Berührt"], ["keyPressed", "Taste gedrückt"], ["scoreAtLeast", "Punktzahl mind."]].forEach(([val, label]) => {
+    const o = document.createElement("option");
+    o.value = val; o.textContent = label;
+    if (condition.type === val) o.selected = true;
+    typeSelect.appendChild(o);
+  });
+  typeSelect.addEventListener("change", () => { condition.type = typeSelect.value; rerender(); });
+  wrap.appendChild(typeSelect);
+
+  if (condition.type === "touching") {
+    wrap.appendChild(makeParamControl({ type: "sprite" }, condition.spriteA, (v) => { condition.spriteA = v; rerender(); }));
+    const and = document.createElement("span");
+    and.textContent = "&";
+    wrap.appendChild(and);
+    wrap.appendChild(makeParamControl({ type: "sprite" }, condition.spriteB, (v) => { condition.spriteB = v; rerender(); }));
+  } else if (condition.type === "keyPressed") {
+    wrap.appendChild(makeParamControl({ type: "key" }, condition.key, (v) => { condition.key = v; rerender(); }));
+  } else if (condition.type === "scoreAtLeast") {
+    wrap.appendChild(makeParamControl({ type: "number" }, condition.amount, (v) => { condition.amount = v; rerender(); }));
+  }
+  return wrap;
+}
+
+function makeDefaultBlock(type) {
+  const def = BLOCK_DEFS[type];
+  const params = {};
+  def.params.forEach((p) => {
+    if (p.type === "condition") params.condition = { type: "touching", spriteA: "", spriteB: "", key: "ArrowUp", amount: 0 };
+    else params[p.name] = p.default;
+  });
+  const block = { type, params };
+  if (def.hasBody) block.body = [];
+  if (def.hasElse) block.elseBody = [];
+  return block;
+}
+
+function makeAddBlockRow(bodyArray, ownerRerender) {
+  const row = document.createElement("div");
+  row.className = "block-add-row";
+  const select = document.createElement("select");
+  Object.entries(BLOCK_CATEGORY_LABELS).forEach(([cat, catLabel]) => {
+    const group = document.createElement("optgroup");
+    group.label = catLabel;
+    Object.entries(BLOCK_DEFS).filter(([, def]) => def.cat === cat).forEach(([type, def]) => {
+      const opt = document.createElement("option");
+      opt.value = type; opt.textContent = def.label;
+      group.appendChild(opt);
+    });
+    select.appendChild(group);
+  });
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = "➕ Hinzufügen";
+  btn.addEventListener("click", () => { bodyArray.push(makeDefaultBlock(select.value)); ownerRerender(); });
+  row.appendChild(select);
+  row.appendChild(btn);
+  return row;
+}
+
+function renderBlockBody(containerEl, bodyArray, ownerRerender) {
+  containerEl.innerHTML = "";
+  bodyArray.forEach((block, idx) => {
+    const def = BLOCK_DEFS[block.type];
+    const el = document.createElement("div");
+    el.className = "block-piece cat-" + def.cat;
+
+    const row = document.createElement("div");
+    row.className = "block-row";
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = def.label;
+    row.appendChild(labelSpan);
+
+    def.params.forEach((param) => {
+      if (param.type === "condition") {
+        row.appendChild(makeConditionControl(block.params.condition, ownerRerender));
+      } else {
+        row.appendChild(makeParamControl(param, block.params[param.name], (v) => { block.params[param.name] = v; ownerRerender(); }));
+      }
+    });
+
+    const controls = document.createElement("span");
+    controls.className = "block-controls";
+    if (idx > 0) {
+      const up = document.createElement("button");
+      up.type = "button"; up.textContent = "▲";
+      up.addEventListener("click", () => { [bodyArray[idx - 1], bodyArray[idx]] = [bodyArray[idx], bodyArray[idx - 1]]; ownerRerender(); });
+      controls.appendChild(up);
+    }
+    if (idx < bodyArray.length - 1) {
+      const down = document.createElement("button");
+      down.type = "button"; down.textContent = "▼";
+      down.addEventListener("click", () => { [bodyArray[idx + 1], bodyArray[idx]] = [bodyArray[idx], bodyArray[idx + 1]]; ownerRerender(); });
+      controls.appendChild(down);
+    }
+    const del = document.createElement("button");
+    del.type = "button"; del.textContent = "✕";
+    del.addEventListener("click", () => { bodyArray.splice(idx, 1); ownerRerender(); });
+    controls.appendChild(del);
+    row.appendChild(controls);
+    el.appendChild(row);
+
+    if (def.hasBody) {
+      const bodyContainer = document.createElement("div");
+      bodyContainer.className = "block-body-container";
+      renderBlockBody(bodyContainer, block.body, ownerRerender);
+      el.appendChild(bodyContainer);
+      el.appendChild(makeAddBlockRow(block.body, ownerRerender));
+    }
+    if (def.hasElse) {
+      const elseLabel = document.createElement("div");
+      elseLabel.textContent = "sonst:";
+      elseLabel.style.marginTop = "6px";
+      el.appendChild(elseLabel);
+      const elseContainer = document.createElement("div");
+      elseContainer.className = "block-body-container";
+      renderBlockBody(elseContainer, block.elseBody, ownerRerender);
+      el.appendChild(elseContainer);
+      el.appendChild(makeAddBlockRow(block.elseBody, ownerRerender));
+    }
+
+    containerEl.appendChild(el);
+  });
+}
+
+// ---------- Editor state ----------
+
+let blocksGame = null;
+let blocksActiveTab = "sprites";
+let editingSpriteDraft = null;
+let selectedPixelColor = PIXEL_COLORS[0];
+let placingSpriteId = null;
+
+function openBlocksEditor(game) {
+  blocksGame = game || { id: "g" + Date.now(), type: "blocks", name: "Mein Spiel", config: { sprites: [], instances: [], scripts: [] } };
+  editingSpriteDraft = null;
+  placingSpriteId = null;
+  blocksActiveTab = "sprites";
+  document.getElementById("blocks-name").value = blocksGame.name;
+  renderBlocksTabs();
+  showScreen("blocks-editor");
+}
+
+function renderBlocksTabs() {
+  document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === blocksActiveTab));
+  document.getElementById("blocks-tab-sprites").classList.toggle("hidden", blocksActiveTab !== "sprites");
+  document.getElementById("blocks-tab-stage").classList.toggle("hidden", blocksActiveTab !== "stage");
+  document.getElementById("blocks-tab-scripts").classList.toggle("hidden", blocksActiveTab !== "scripts");
+  renderBlocksSpritesTab();
+  renderBlocksStageTab();
+  renderBlocksScriptsTab();
+}
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => { blocksActiveTab = btn.dataset.tab; renderBlocksTabs(); });
+});
+
+// ---------- Sprites tab ----------
+
+function renderBlocksSpritesTab() {
+  const container = document.getElementById("blocks-tab-sprites");
+  container.innerHTML = "";
+
+  if (editingSpriteDraft) {
+    renderSpritePixelEditor(container);
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "sprite-list";
+  blocksGame.config.sprites.forEach((sprite) => {
+    const card = document.createElement("div");
+    card.className = "sprite-card";
+    const canvas = document.createElement("canvas");
+    canvas.width = 40; canvas.height = 40;
+    drawSpriteOnCanvas(canvas, sprite);
+    card.appendChild(canvas);
+    const name = document.createElement("div");
+    name.className = "sprite-card-name";
+    name.textContent = sprite.name;
+    card.appendChild(name);
+    const actions = document.createElement("div");
+    actions.className = "sprite-card-actions";
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️";
+    editBtn.addEventListener("click", () => {
+      editingSpriteDraft = { id: sprite.id, name: sprite.name, pixels: sprite.pixels.map((row) => row.slice()) };
+      renderBlocksSpritesTab();
+    });
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "🗑️";
+    delBtn.addEventListener("click", () => {
+      if (!confirm("Diese Figur wirklich löschen?")) return;
+      blocksGame.config.sprites = blocksGame.config.sprites.filter((s) => s.id !== sprite.id);
+      blocksGame.config.instances = blocksGame.config.instances.filter((i) => i.spriteId !== sprite.id);
+      renderBlocksSpritesTab();
+    });
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+    card.appendChild(actions);
+    list.appendChild(card);
+  });
+  container.appendChild(list);
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "big-btn secondary";
+  addBtn.textContent = "➕ Neue Figur";
+  addBtn.addEventListener("click", () => {
+    editingSpriteDraft = { id: "sp" + Date.now(), name: "Figur", pixels: makeEmptySpritePixels() };
+    renderBlocksSpritesTab();
+  });
+  container.appendChild(addBtn);
+}
+
+function renderSpritePixelEditor(container) {
+  const nameInput = document.createElement("input");
+  nameInput.className = "name-input";
+  nameInput.value = editingSpriteDraft.name;
+  nameInput.placeholder = "Name der Figur";
+  nameInput.addEventListener("input", () => { editingSpriteDraft.name = nameInput.value; });
+  container.appendChild(nameInput);
+
+  const palette = document.createElement("div");
+  palette.className = "color-palette";
+  PIXEL_COLORS.forEach((color) => {
+    const sw = document.createElement("div");
+    sw.className = "color-swatch" + (selectedPixelColor === color ? " selected" : "");
+    sw.style.background = color;
+    sw.addEventListener("click", () => { selectedPixelColor = color; renderSpritePixelEditor(container); });
+    palette.appendChild(sw);
+  });
+  const eraser = document.createElement("div");
+  eraser.className = "color-swatch eraser" + (selectedPixelColor === null ? " selected" : "");
+  eraser.title = "Radiergummi";
+  eraser.addEventListener("click", () => { selectedPixelColor = null; renderSpritePixelEditor(container); });
+  palette.appendChild(eraser);
+  container.appendChild(palette);
+
+  const grid = document.createElement("div");
+  grid.className = "pixel-grid";
+  grid.style.gridTemplateColumns = `repeat(${SPRITE_SIZE}, 22px)`;
+  let painting = false;
+  const paintPixel = (r, c, cell) => {
+    editingSpriteDraft.pixels[r][c] = selectedPixelColor;
+    cell.style.background = selectedPixelColor || "white";
+  };
+  for (let r = 0; r < SPRITE_SIZE; r++) {
+    for (let c = 0; c < SPRITE_SIZE; c++) {
+      const cell = document.createElement("div");
+      cell.className = "pixel-cell";
+      cell.style.background = editingSpriteDraft.pixels[r][c] || "white";
+      cell.addEventListener("mousedown", () => { painting = true; paintPixel(r, c, cell); });
+      cell.addEventListener("mouseenter", () => { if (painting) paintPixel(r, c, cell); });
+      cell.addEventListener("touchstart", (e) => { e.preventDefault(); paintPixel(r, c, cell); });
+      grid.appendChild(cell);
+    }
+  }
+  document.addEventListener("mouseup", () => (painting = false));
+  container.appendChild(grid);
+
+  const actions = document.createElement("div");
+  actions.className = "editor-actions";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "big-btn primary";
+  saveBtn.textContent = "💾 Figur speichern";
+  saveBtn.addEventListener("click", () => {
+    if (!editingSpriteDraft.name.trim()) { alert("Gib deiner Figur einen Namen."); return; }
+    const idx = blocksGame.config.sprites.findIndex((s) => s.id === editingSpriteDraft.id);
+    const sprite = { id: editingSpriteDraft.id, name: editingSpriteDraft.name.trim(), pixels: editingSpriteDraft.pixels };
+    if (idx >= 0) blocksGame.config.sprites[idx] = sprite; else blocksGame.config.sprites.push(sprite);
+    editingSpriteDraft = null;
+    renderBlocksSpritesTab();
+  });
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "big-btn secondary";
+  cancelBtn.textContent = "Abbrechen";
+  cancelBtn.addEventListener("click", () => { editingSpriteDraft = null; renderBlocksSpritesTab(); });
+  actions.appendChild(saveBtn);
+  actions.appendChild(cancelBtn);
+  container.appendChild(actions);
+}
+
+// ---------- Stage tab ----------
+
+function renderBlocksStageTab() {
+  const container = document.getElementById("blocks-tab-stage");
+  container.innerHTML = "";
+
+  if (blocksGame.config.sprites.length === 0) {
+    const hint = document.createElement("p");
+    hint.className = "hint";
+    hint.textContent = 'Erstelle zuerst eine Figur im Tab "Figuren".';
+    container.appendChild(hint);
+    return;
+  }
+
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent = "Wähle eine Figur und klicke auf die Bühne, um sie zu platzieren. Klicke eine platzierte Figur an, um sie zu entfernen.";
+  container.appendChild(hint);
+
+  const palette = document.createElement("div");
+  palette.className = "palette";
+  blocksGame.config.sprites.forEach((sprite) => {
+    const btn = document.createElement("button");
+    btn.className = "tool-btn" + (placingSpriteId === sprite.id ? " selected" : "");
+    const canvas = document.createElement("canvas");
+    canvas.width = 28; canvas.height = 28;
+    drawSpriteOnCanvas(canvas, sprite);
+    btn.appendChild(canvas);
+    btn.addEventListener("click", () => { placingSpriteId = sprite.id; renderBlocksStageTab(); });
+    palette.appendChild(btn);
+  });
+  container.appendChild(palette);
+
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  grid.style.gridTemplateColumns = `repeat(${STAGE_COLS}, var(--tile-size))`;
+  for (let r = 0; r < STAGE_ROWS; r++) {
+    for (let c = 0; c < STAGE_COLS; c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      const instance = blocksGame.config.instances.find((i) => i.gridR === r && i.gridC === c);
+      if (instance) {
+        const sprite = blocksGame.config.sprites.find((s) => s.id === instance.spriteId);
+        const canvas = document.createElement("canvas");
+        canvas.width = 30; canvas.height = 30;
+        drawSpriteOnCanvas(canvas, sprite);
+        cell.appendChild(canvas);
+        cell.addEventListener("click", () => {
+          if (!confirm(`"${instance.name}" von der Bühne entfernen?`)) return;
+          blocksGame.config.instances = blocksGame.config.instances.filter((i) => i.id !== instance.id);
+          renderBlocksStageTab();
+        });
+      } else {
+        cell.addEventListener("click", () => {
+          if (!placingSpriteId) { alert("Wähle zuerst eine Figur aus."); return; }
+          const sprite = blocksGame.config.sprites.find((s) => s.id === placingSpriteId);
+          const count = blocksGame.config.instances.filter((i) => i.spriteId === placingSpriteId).length;
+          blocksGame.config.instances.push({
+            id: "in" + Date.now() + Math.floor(Math.random() * 1000),
+            spriteId: placingSpriteId,
+            name: sprite.name + (count > 0 ? " " + (count + 1) : ""),
+            gridR: r, gridC: c,
+          });
+          renderBlocksStageTab();
+        });
+      }
+      grid.appendChild(cell);
+    }
+  }
+  container.appendChild(grid);
+
+  if (blocksGame.config.instances.length > 0) {
+    const list = document.createElement("div");
+    list.className = "instance-list";
+    blocksGame.config.instances.forEach((instance) => {
+      const row = document.createElement("div");
+      row.className = "instance-row";
+      const input = document.createElement("input");
+      input.value = instance.name;
+      input.addEventListener("input", () => { instance.name = input.value; });
+      const del = document.createElement("button");
+      del.textContent = "✕";
+      del.addEventListener("click", () => {
+        blocksGame.config.instances = blocksGame.config.instances.filter((i) => i.id !== instance.id);
+        renderBlocksStageTab();
+      });
+      row.appendChild(input);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+    container.appendChild(list);
+  }
+}
+
+// ---------- Scripts tab ----------
+
+function describeScriptEvent(event) {
+  if (event.type === "start") return "🏁 Beim Start";
+  if (event.type === "forever") return "🔁 Dauerschleife";
+  if (event.type === "key") return `⌨️ Bei Taste ${keyLabel(event.key)}`;
+  if (event.type === "collision") {
+    const a = blocksGame.config.instances.find((i) => i.id === event.spriteA);
+    const b = blocksGame.config.instances.find((i) => i.id === event.spriteB);
+    return `💥 Wenn ${a ? a.name : "?"} und ${b ? b.name : "?"} sich berühren`;
+  }
+  if (event.type === "timer") return `⏱️ Alle ${event.seconds} Sekunden`;
+  return event.type;
+}
+
+function renderBlocksScriptsTab() {
+  const container = document.getElementById("blocks-tab-scripts");
+  container.innerHTML = "";
+
+  blocksGame.config.scripts.forEach((script) => {
+    const card = document.createElement("div");
+    card.className = "script-card";
+    const header = document.createElement("div");
+    header.className = "script-header";
+    const label = document.createElement("span");
+    label.textContent = describeScriptEvent(script.event);
+    header.appendChild(label);
+    const del = document.createElement("button");
+    del.textContent = "✕";
+    del.className = "btn-change-key";
+    del.addEventListener("click", () => {
+      blocksGame.config.scripts = blocksGame.config.scripts.filter((s) => s.id !== script.id);
+      renderBlocksScriptsTab();
+    });
+    header.appendChild(del);
+    card.appendChild(header);
+
+    const bodyWrap = document.createElement("div");
+    bodyWrap.className = "script-body-wrap";
+    const bodyContainer = document.createElement("div");
+    renderBlockBody(bodyContainer, script.body, renderBlocksScriptsTab);
+    bodyWrap.appendChild(bodyContainer);
+    bodyWrap.appendChild(makeAddBlockRow(script.body, renderBlocksScriptsTab));
+    card.appendChild(bodyWrap);
+
+    container.appendChild(card);
+  });
+
+  container.appendChild(makeNewScriptForm());
+}
+
+function makeNewScriptForm() {
+  const wrap = document.createElement("div");
+  wrap.className = "block-add-row";
+  wrap.style.flexDirection = "column";
+  wrap.style.alignItems = "stretch";
+  wrap.style.maxWidth = "460px";
+  wrap.style.margin = "14px auto";
+
+  const typeSelect = document.createElement("select");
+  Object.entries(EVENT_DEFS).forEach(([type, def]) => {
+    const o = document.createElement("option");
+    o.value = type; o.textContent = def.label;
+    typeSelect.appendChild(o);
+  });
+
+  const paramsRow = document.createElement("div");
+  paramsRow.className = "block-row";
+
+  let draftEvent = { type: typeSelect.value };
+  function resetDraftParams() {
+    EVENT_DEFS[draftEvent.type].params.forEach((p) => { draftEvent[p.name] = p.default; });
+  }
+  resetDraftParams();
+
+  function renderParamsRow() {
+    paramsRow.innerHTML = "";
+    EVENT_DEFS[draftEvent.type].params.forEach((p) => {
+      paramsRow.appendChild(makeParamControl(p, draftEvent[p.name], (v) => { draftEvent[p.name] = v; renderParamsRow(); }));
+    });
+  }
+  renderParamsRow();
+
+  typeSelect.addEventListener("change", () => {
+    draftEvent = { type: typeSelect.value };
+    resetDraftParams();
+    renderParamsRow();
+  });
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.textContent = "➕ Neues Skript hinzufügen";
+  addBtn.addEventListener("click", () => {
+    blocksGame.config.scripts.push({ id: "sc" + Date.now(), event: { ...draftEvent }, body: [] });
+    renderBlocksScriptsTab();
+  });
+
+  const row1 = document.createElement("div");
+  row1.className = "block-add-row";
+  row1.appendChild(typeSelect);
+  wrap.appendChild(row1);
+  wrap.appendChild(paramsRow);
+  wrap.appendChild(addBtn);
+  return wrap;
+}
+
+document.getElementById("btn-cancel-blocks-editor").addEventListener("click", () => showScreen("home"));
+document.getElementById("btn-save-blocks").addEventListener("click", () => {
+  blocksGame.name = document.getElementById("blocks-name").value.trim() || "Mein Spiel";
+  if (blocksGame.config.sprites.length === 0) { alert("Erstelle mindestens eine Figur, bevor du speicherst."); return; }
+  if (blocksGame.config.instances.length === 0) { alert("Platziere mindestens eine Figur auf der Bühne."); return; }
+  if (blocksGame.config.scripts.length === 0) { alert("Füge mindestens ein Skript hinzu, damit im Spiel etwas passiert."); return; }
+  upsertGame(blocksGame);
+  renderHome();
+  showScreen("home");
+});
+
+// ---------- Play / Laufzeit-Engine ----------
+
+let blocksPlayState = null;
+let blocksAudioCtx = null;
+
+function startBlocksPlay(game) {
+  stopBlocksLoop();
+  const canvas = document.getElementById("blocks-canvas");
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const instances = game.config.instances.map((inst) => ({
+    id: inst.id,
+    name: inst.name,
+    spriteId: inst.spriteId,
+    x: ((inst.gridC + 0.5) / STAGE_COLS) * 100,
+    y: ((inst.gridR + 0.5) / STAGE_ROWS) * 100,
+    vx: 0, vy: 0,
+    visible: true,
+  }));
+
+  blocksPlayState = {
+    id: game.id, name: game.name,
+    sprites: game.config.sprites,
+    instances,
+    scripts: game.config.scripts,
+    score: 0,
+    texts: [],
+    keysDown: new Set(),
+    keysJustPressed: new Set(),
+    wasTouching: {},
+    timerAcc: {},
+    threads: [],
+    gameOver: false,
+    lastTime: null,
+    ctx, canvas,
+  };
+
+  document.getElementById("blocks-play-title").textContent = "🧩 " + game.name;
+  document.getElementById("blocks-play-message").textContent = "";
+  document.getElementById("blocks-score-display").textContent = "⭐ 0";
+
+  game.config.scripts.forEach((script) => {
+    if (script.event.type === "start" || script.event.type === "forever") spawnBlocksThread(script);
+  });
+
+  blocksPlayState.rafId = requestAnimationFrame(blocksLoop);
+  showScreen("blocks-play");
+}
+
+function spawnBlocksThread(script) {
+  const gen = script.event.type === "forever" ? blocksForeverRunner(script.body) : blocksRunBody(script.body);
+  blocksPlayState.threads.push({ scriptId: script.id, generator: gen, done: false });
+}
+
+function* blocksForeverRunner(body) {
+  while (true) {
+    if (blocksPlayState.gameOver) return;
+    yield* blocksRunBody(body);
+  }
+}
+
+function* blocksRunBody(body) {
+  for (const block of body) {
+    if (blocksPlayState.gameOver) return;
+    yield* blocksRunBlock(block);
+  }
+}
+
+function getBlocksInstance(id) {
+  return blocksPlayState.instances.find((i) => i.id === id);
+}
+
+function evalBlocksCondition(condition) {
+  if (!condition) return false;
+  if (condition.type === "touching") {
+    const a = getBlocksInstance(condition.spriteA), b = getBlocksInstance(condition.spriteB);
+    if (!a || !b) return false;
+    return Math.abs(a.x - b.x) < TOUCH_THRESHOLD_X && Math.abs(a.y - b.y) < TOUCH_THRESHOLD_Y;
+  }
+  if (condition.type === "keyPressed") return blocksPlayState.keysDown.has(condition.key);
+  if (condition.type === "scoreAtLeast") return blocksPlayState.score >= condition.amount;
+  return false;
+}
+
+function playBlocksTone(tone) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    if (!blocksAudioCtx) blocksAudioCtx = new AudioCtx();
+    const freq = tone === "low" ? 220 : tone === "high" ? 880 : 440;
+    const osc = blocksAudioCtx.createOscillator();
+    const gain = blocksAudioCtx.createGain();
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(blocksAudioCtx.destination);
+    gain.gain.setValueAtTime(0.15, blocksAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, blocksAudioCtx.currentTime + 0.3);
+    osc.start();
+    osc.stop(blocksAudioCtx.currentTime + 0.3);
+  } catch (e) { /* Audio evtl. nicht verfügbar */ }
+}
+
+function blocksEndGame(result, message) {
+  if (!blocksPlayState || blocksPlayState.gameOver) return;
+  blocksPlayState.gameOver = true;
+  const icon = result === "win" ? "🏆" : "😵";
+  document.getElementById("blocks-play-message").textContent = `${icon} ${message}`;
+}
+
+function* blocksRunBlock(block) {
+  const state = blocksPlayState;
+  switch (block.type) {
+    case "move": {
+      const inst = getBlocksInstance(block.params.sprite);
+      if (inst) { inst.x += block.params.dx; inst.y += block.params.dy; }
+      break;
+    }
+    case "setPos": {
+      const inst = getBlocksInstance(block.params.sprite);
+      if (inst) { inst.x = block.params.x; inst.y = block.params.y; }
+      break;
+    }
+    case "setVelocity": {
+      const inst = getBlocksInstance(block.params.sprite);
+      if (inst) { inst.vx = block.params.vx; inst.vy = block.params.vy; }
+      break;
+    }
+    case "bounce": {
+      const inst = getBlocksInstance(block.params.sprite);
+      if (inst) {
+        if (inst.x < EDGE_MARGIN_X || inst.x > 100 - EDGE_MARGIN_X) inst.vx = -inst.vx;
+        if (inst.y < EDGE_MARGIN_Y || inst.y > 100 - EDGE_MARGIN_Y) inst.vy = -inst.vy;
+        inst.x = Math.max(EDGE_MARGIN_X, Math.min(100 - EDGE_MARGIN_X, inst.x));
+        inst.y = Math.max(EDGE_MARGIN_Y, Math.min(100 - EDGE_MARGIN_Y, inst.y));
+      }
+      break;
+    }
+    case "showText": {
+      state.texts.push({ text: block.params.text, until: performance.now() + block.params.seconds * 1000 });
+      break;
+    }
+    case "setVisible": {
+      const inst = getBlocksInstance(block.params.sprite);
+      if (inst) inst.visible = block.params.visible === "true" || block.params.visible === true;
+      break;
+    }
+    case "playSound": playBlocksTone(block.params.tone); break;
+    case "changeScore": {
+      state.score += block.params.amount;
+      document.getElementById("blocks-score-display").textContent = "⭐ " + state.score;
+      break;
+    }
+    case "setScore": {
+      state.score = block.params.amount;
+      document.getElementById("blocks-score-display").textContent = "⭐ " + state.score;
+      break;
+    }
+    case "wait": {
+      const until = performance.now() + block.params.seconds * 1000;
+      while (performance.now() < until) {
+        if (state.gameOver) return;
+        yield;
+      }
+      break;
+    }
+    case "repeat": {
+      for (let i = 0; i < block.params.count; i++) {
+        if (state.gameOver) return;
+        yield* blocksRunBody(block.body);
+      }
+      break;
+    }
+    case "ifBlock": {
+      if (evalBlocksCondition(block.params.condition)) yield* blocksRunBody(block.body);
+      else if (block.elseBody) yield* blocksRunBody(block.elseBody);
+      break;
+    }
+    case "endGame": blocksEndGame(block.params.result, block.params.message); break;
+  }
+}
+
+function blocksLoop(timestamp) {
+  if (!blocksPlayState || blocksPlayState.gameOver) return;
+  if (blocksPlayState.lastTime === null) blocksPlayState.lastTime = timestamp;
+  const dt = (timestamp - blocksPlayState.lastTime) / 1000;
+  blocksPlayState.lastTime = timestamp;
+
+  blocksPlayState.instances.forEach((inst) => {
+    inst.x += inst.vx * dt;
+    inst.y += inst.vy * dt;
+  });
+
+  blocksPlayState.threads.forEach((thread) => {
+    if (thread.done) return;
+    const res = thread.generator.next();
+    if (res.done) thread.done = true;
+  });
+  blocksPlayState.threads = blocksPlayState.threads.filter((t) => !t.done);
+
+  blocksPlayState.scripts.forEach((script) => {
+    if (script.event.type === "key" && blocksPlayState.keysJustPressed.has(script.event.key)) spawnBlocksThread(script);
+  });
+  blocksPlayState.keysJustPressed.clear();
+
+  blocksPlayState.scripts.forEach((script) => {
+    if (script.event.type !== "collision") return;
+    const touching = evalBlocksCondition({ type: "touching", spriteA: script.event.spriteA, spriteB: script.event.spriteB });
+    const was = blocksPlayState.wasTouching[script.id] || false;
+    if (touching && !was) spawnBlocksThread(script);
+    blocksPlayState.wasTouching[script.id] = touching;
+  });
+
+  blocksPlayState.scripts.forEach((script) => {
+    if (script.event.type !== "timer") return;
+    blocksPlayState.timerAcc[script.id] = (blocksPlayState.timerAcc[script.id] || 0) + dt;
+    if (blocksPlayState.timerAcc[script.id] >= script.event.seconds) {
+      blocksPlayState.timerAcc[script.id] -= script.event.seconds;
+      spawnBlocksThread(script);
+    }
+  });
+
+  renderBlocksFrame();
+
+  if (!blocksPlayState.gameOver) blocksPlayState.rafId = requestAnimationFrame(blocksLoop);
+}
+
+function renderBlocksFrame() {
+  const { ctx, canvas } = blocksPlayState;
+  ctx.fillStyle = "#cdeffd";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#b5e8a6";
+  ctx.fillRect(0, canvas.height * 0.85, canvas.width, canvas.height * 0.15);
+
+  blocksPlayState.instances.forEach((inst) => {
+    if (!inst.visible) return;
+    const sprite = blocksPlayState.sprites.find((s) => s.id === inst.spriteId);
+    drawSpriteAt(ctx, sprite, (inst.x / 100) * canvas.width, (inst.y / 100) * canvas.height, SPRITE_DRAW_PX);
+  });
+
+  const now = performance.now();
+  blocksPlayState.texts = blocksPlayState.texts.filter((t) => t.until > now);
+  ctx.fillStyle = "rgba(23,44,102,0.85)";
+  ctx.font = "bold 16px sans-serif";
+  ctx.textAlign = "center";
+  blocksPlayState.texts.forEach((t, i) => ctx.fillText(t.text, canvas.width / 2, 24 + i * 20));
+}
+
+function stopBlocksLoop() {
+  if (blocksPlayState) {
+    if (blocksPlayState.rafId) cancelAnimationFrame(blocksPlayState.rafId);
+    blocksPlayState.gameOver = true;
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!blocksPlayState || blocksPlayState.gameOver) return;
+  if (screens["blocks-play"].classList.contains("hidden")) return;
+  if (!blocksPlayState.keysDown.has(e.key)) blocksPlayState.keysJustPressed.add(e.key);
+  blocksPlayState.keysDown.add(e.key);
+});
+document.addEventListener("keyup", (e) => {
+  if (!blocksPlayState) return;
+  blocksPlayState.keysDown.delete(e.key);
+});
+
+document.getElementById("btn-restart-blocks-play").addEventListener("click", () => {
+  const game = loadGames().find((g) => g.id === blocksPlayState.id);
+  if (game) startBlocksPlay(game);
+});
+document.getElementById("btn-back-blocks-play").addEventListener("click", () => {
+  stopBlocksLoop();
   showScreen("home");
   renderHome();
 });
