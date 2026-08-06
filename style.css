@@ -221,6 +221,162 @@ body {
 
 .editor-actions { margin-top: 16px; }
 
+.type-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.type-btn {
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 18px 16px;
+  border: none;
+  border-radius: 16px;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+  width: 150px;
+  line-height: 1.5;
+}
+.type-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+.type-btn span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: #666;
+  font-family: "Trebuchet MS", sans-serif;
+}
+
+.type-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 2px 8px;
+  margin-bottom: 6px;
+}
+
+/* Quiz editor */
+.question-card {
+  background: white;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 12px auto;
+  max-width: 460px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+  text-align: left;
+}
+
+.question-card input[type="text"] {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid var(--secondary);
+  width: 100%;
+  margin: 4px 0;
+}
+
+.answer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+.answer-row input[type="text"] { flex: 1; }
+
+.question-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-remove-question {
+  background: var(--enemy);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* Quiz play */
+#quiz-question-box {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 460px;
+  margin: 12px auto;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+}
+#quiz-question-box h3 { margin-top: 0; }
+.quiz-answer-btn {
+  display: block;
+  width: 100%;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 12px;
+  border: 2px solid var(--secondary);
+  background: white;
+  cursor: pointer;
+}
+.quiz-answer-btn.correct { background: var(--goal); color: white; border-color: var(--goal); }
+.quiz-answer-btn.wrong { background: var(--enemy); color: white; border-color: var(--enemy); }
+.quiz-answer-btn[disabled] { cursor: default; }
+
+/* Memory */
+.memory-card {
+  width: var(--tile-size);
+  height: var(--tile-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  background: var(--secondary);
+  cursor: pointer;
+}
+.memory-card.revealed { background: white; box-shadow: inset 0 0 0 3px var(--dark); }
+.memory-card.matched { background: var(--accent); opacity: 0.6; }
+
+/* Jump game */
+#jump-track {
+  position: relative;
+  height: 140px;
+  max-width: 500px;
+  margin: 12px auto;
+  background: linear-gradient(to bottom, #cdeffd 0%, #cdeffd 80%, #b5e8a6 80%, #b5e8a6 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+}
+#jump-player {
+  position: absolute;
+  left: 10%;
+  bottom: 20%;
+  font-size: 2rem;
+  transform: translate(-50%, 0);
+  transition: none;
+}
+#jump-player.jumping { animation: jump-arc 0.5s ease-out; }
+@keyframes jump-arc {
+  0% { bottom: 20%; }
+  40% { bottom: 65%; }
+  100% { bottom: 20%; }
+}
+.jump-obstacle {
+  position: absolute;
+  bottom: 20%;
+  font-size: 1.8rem;
+  transform: translate(-50%, 0);
+}
+
 @media (max-width: 480px) {
   :root { --tile-size: 30px; }
   .app-header h1 { font-size: 1.3rem; }

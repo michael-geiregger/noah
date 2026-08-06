@@ -20,55 +20,161 @@
   <p id="empty-hint" class="hint">Du hast noch kein Spiel gebaut. Los geht's! 🚀</p>
 </section>
 
-<!-- NEW GAME: SIZE PICKER -->
-<section id="screen-newgame" class="screen hidden">
-  <h2>Wie groß soll dein Spiel sein?</h2>
+<!-- GAME TYPE PICKER -->
+<section id="screen-typepicker" class="screen hidden">
+  <h2>Was für ein Spiel möchtest du bauen?</h2>
+  <div class="type-options">
+    <button class="type-btn" data-type="maze">🌀<br>Irrgarten<br><span>Durchs Labyrinth zum Ziel</span></button>
+    <button class="type-btn" data-type="quiz">❓<br>Quiz<br><span>Eigene Fragen stellen</span></button>
+    <button class="type-btn" data-type="memory">🧠<br>Memory<br><span>Kartenpaare finden</span></button>
+    <button class="type-btn" data-type="jump">🏃<br>Hüpf-Spiel<br><span>Hindernissen ausweichen</span></button>
+  </div>
+  <button id="btn-cancel-typepicker" class="big-btn secondary">⬅ Zurück</button>
+</section>
+
+<!-- MAZE: SIZE PICKER -->
+<section id="screen-maze-size" class="screen hidden">
+  <h2>Wie groß soll dein Irrgarten sein?</h2>
   <div class="size-options">
     <button class="big-btn size-btn" data-size="8">Klein<br><span>8×8</span></button>
     <button class="big-btn size-btn" data-size="10">Mittel<br><span>10×10</span></button>
     <button class="big-btn size-btn" data-size="12">Groß<br><span>12×12</span></button>
   </div>
-  <button id="btn-cancel-new" class="big-btn secondary">⬅ Zurück</button>
+  <button id="btn-cancel-maze-size" class="big-btn secondary">⬅ Zurück</button>
 </section>
 
-<!-- EDITOR SCREEN -->
-<section id="screen-editor" class="screen hidden">
-  <h2>🛠️ Baue dein Spiel</h2>
-  <input id="game-name" class="name-input" placeholder="Name deines Spiels" maxlength="30">
+<!-- MAZE EDITOR -->
+<section id="screen-maze-editor" class="screen hidden">
+  <h2>🛠️ Baue deinen Irrgarten</h2>
+  <input id="maze-name" class="name-input" placeholder="Name deines Spiels" maxlength="30">
 
-  <div class="palette" id="palette"></div>
-  <p id="editor-status" class="hint"></p>
+  <div class="palette" id="maze-palette"></div>
+  <p id="maze-editor-status" class="hint"></p>
 
-  <div id="editor-grid" class="grid"></div>
+  <div id="maze-editor-grid" class="grid"></div>
 
   <div class="editor-actions">
-    <button id="btn-save-game" class="big-btn primary">💾 Speichern</button>
-    <button id="btn-cancel-editor" class="big-btn secondary">⬅ Zurück</button>
+    <button id="btn-save-maze" class="big-btn primary">💾 Speichern</button>
+    <button id="btn-cancel-maze-editor" class="big-btn secondary">⬅ Zurück</button>
   </div>
 </section>
 
-<!-- PLAY SCREEN -->
-<section id="screen-play" class="screen hidden">
-  <h2 id="play-title">🕹️ Spielen</h2>
+<!-- MAZE PLAY -->
+<section id="screen-maze-play" class="screen hidden">
+  <h2 id="maze-play-title">🕹️ Spielen</h2>
   <div class="hud">
-    <span id="score-display">🪙 0 / 0</span>
-    <span id="play-message"></span>
+    <span id="maze-score-display">🪙 0 / 0</span>
+    <span id="maze-play-message"></span>
   </div>
 
-  <div id="play-grid" class="grid"></div>
+  <div id="maze-play-grid" class="grid"></div>
 
   <div class="dpad">
-    <button id="dpad-up" class="dpad-btn">⬆️</button>
+    <button id="maze-dpad-up" class="dpad-btn">⬆️</button>
     <div class="dpad-row">
-      <button id="dpad-left" class="dpad-btn">⬅️</button>
-      <button id="dpad-down" class="dpad-btn">⬇️</button>
-      <button id="dpad-right" class="dpad-btn">➡️</button>
+      <button id="maze-dpad-left" class="dpad-btn">⬅️</button>
+      <button id="maze-dpad-down" class="dpad-btn">⬇️</button>
+      <button id="maze-dpad-right" class="dpad-btn">➡️</button>
     </div>
   </div>
 
   <div class="editor-actions">
-    <button id="btn-restart-play" class="big-btn secondary">🔄 Neu starten</button>
-    <button id="btn-back-play" class="big-btn secondary">⬅ Zurück</button>
+    <button id="btn-restart-maze-play" class="big-btn secondary">🔄 Neu starten</button>
+    <button id="btn-back-maze-play" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- QUIZ EDITOR -->
+<section id="screen-quiz-editor" class="screen hidden">
+  <h2>🛠️ Baue dein Quiz</h2>
+  <input id="quiz-name" class="name-input" placeholder="Name deines Spiels" maxlength="30">
+
+  <div id="quiz-questions"></div>
+
+  <button id="btn-add-question" class="big-btn secondary">➕ Frage hinzufügen</button>
+  <p id="quiz-editor-status" class="hint"></p>
+
+  <div class="editor-actions">
+    <button id="btn-save-quiz" class="big-btn primary">💾 Speichern</button>
+    <button id="btn-cancel-quiz-editor" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- QUIZ PLAY -->
+<section id="screen-quiz-play" class="screen hidden">
+  <h2 id="quiz-play-title">❓ Quiz</h2>
+  <p id="quiz-progress" class="hint"></p>
+  <div id="quiz-question-box"></div>
+  <div class="editor-actions">
+    <button id="btn-back-quiz-play" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- MEMORY EDITOR -->
+<section id="screen-memory-editor" class="screen hidden">
+  <h2>🛠️ Baue dein Memory</h2>
+  <input id="memory-name" class="name-input" placeholder="Name deines Spiels" maxlength="30">
+  <p class="hint">Wähle 4 bis 10 Symbole aus (jedes wird zu einem Kartenpaar)</p>
+  <div id="memory-palette" class="palette"></div>
+  <p id="memory-editor-status" class="hint"></p>
+  <div class="editor-actions">
+    <button id="btn-save-memory" class="big-btn primary">💾 Speichern</button>
+    <button id="btn-cancel-memory-editor" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- MEMORY PLAY -->
+<section id="screen-memory-play" class="screen hidden">
+  <h2 id="memory-play-title">🧠 Memory</h2>
+  <div class="hud">
+    <span id="memory-move-display">🔄 0 Züge</span>
+    <span id="memory-play-message"></span>
+  </div>
+  <div id="memory-grid" class="grid"></div>
+  <div class="editor-actions">
+    <button id="btn-restart-memory-play" class="big-btn secondary">🔄 Neu starten</button>
+    <button id="btn-back-memory-play" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- JUMP EDITOR -->
+<section id="screen-jump-editor" class="screen hidden">
+  <h2>🛠️ Baue dein Hüpf-Spiel</h2>
+  <input id="jump-name" class="name-input" placeholder="Name deines Spiels" maxlength="30">
+
+  <p class="hint">Deine Spielfigur</p>
+  <div id="jump-player-palette" class="palette"></div>
+
+  <p class="hint">Das Hindernis</p>
+  <div id="jump-obstacle-palette" class="palette"></div>
+
+  <p class="hint">Geschwindigkeit</p>
+  <div class="size-options" id="jump-speed-options">
+    <button class="big-btn speed-btn" data-speed="langsam">Langsam</button>
+    <button class="big-btn speed-btn" data-speed="mittel">Mittel</button>
+    <button class="big-btn speed-btn" data-speed="schnell">Schnell</button>
+  </div>
+
+  <div class="editor-actions">
+    <button id="btn-save-jump" class="big-btn primary">💾 Speichern</button>
+    <button id="btn-cancel-jump-editor" class="big-btn secondary">⬅ Zurück</button>
+  </div>
+</section>
+
+<!-- JUMP PLAY -->
+<section id="screen-jump-play" class="screen hidden">
+  <h2 id="jump-play-title">🏃 Hüpf-Spiel</h2>
+  <div class="hud">
+    <span id="jump-score-display">⭐ 0</span>
+    <span id="jump-play-message"></span>
+  </div>
+  <div id="jump-track">
+    <div id="jump-player">🙂</div>
+  </div>
+  <button id="btn-jump" class="big-btn primary">⬆️ Springen</button>
+  <div class="editor-actions">
+    <button id="btn-restart-jump-play" class="big-btn secondary">🔄 Neu starten</button>
+    <button id="btn-back-jump-play" class="big-btn secondary">⬅ Zurück</button>
   </div>
 </section>
 
