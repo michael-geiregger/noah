@@ -39,6 +39,103 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// ============================================================
+// KEY BINDINGS (konfigurierbare Steuerung)
+// ============================================================
+
+const KEYBINDINGS_STORAGE_KEY = "noah_keybindings";
+
+const DEFAULT_KEY_BINDINGS = {
+  up: "ArrowUp",
+  down: "ArrowDown",
+  left: "ArrowLeft",
+  right: "ArrowRight",
+  jump: " ",
+};
+
+const KEY_ACTION_LABELS = {
+  up: "⬆️ Hoch",
+  down: "⬇️ Runter",
+  left: "⬅️ Links",
+  right: "➡️ Rechts",
+  jump: "🏃 Springen",
+};
+
+function loadKeyBindings() {
+  try {
+    const raw = localStorage.getItem(KEYBINDINGS_STORAGE_KEY);
+    return raw ? { ...DEFAULT_KEY_BINDINGS, ...JSON.parse(raw) } : { ...DEFAULT_KEY_BINDINGS };
+  } catch (e) {
+    return { ...DEFAULT_KEY_BINDINGS };
+  }
+}
+
+function saveKeyBindings(bindings) {
+  localStorage.setItem(KEYBINDINGS_STORAGE_KEY, JSON.stringify(bindings));
+}
+
+let keyBindings = loadKeyBindings();
+
+function keyLabel(key) {
+  const map = {
+    " ": "Leertaste", "ArrowUp": "⬆️", "ArrowDown": "⬇️", "ArrowLeft": "⬅️", "ArrowRight": "➡️",
+    "Enter": "Enter", "Shift": "Shift", "Control": "Strg", "Alt": "Alt", "Tab": "Tab",
+  };
+  if (map[key]) return map[key];
+  if (key.length === 1) return key.toUpperCase();
+  return key;
+}
+
+let listeningAction = null;
+
+function renderKeySettings() {
+  const list = document.getElementById("key-settings-list");
+  list.innerHTML = "";
+  Object.keys(KEY_ACTION_LABELS).forEach((action) => {
+    const row = document.createElement("div");
+    row.className = "key-settings-row";
+    const isListening = listeningAction === action;
+    row.innerHTML = `
+      <span class="action-label">${KEY_ACTION_LABELS[action]}</span>
+      <span>
+        <span class="key-badge${isListening ? " listening" : ""}">${isListening ? "Drücke..." : keyLabel(keyBindings[action])}</span>
+        <button class="btn-change-key" data-action="${action}">Ändern</button>
+      </span>
+    `;
+    row.querySelector(".btn-change-key").addEventListener("click", () => {
+      listeningAction = action;
+      renderKeySettings();
+    });
+    list.appendChild(row);
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!listeningAction) return;
+  e.preventDefault();
+  if (e.key !== "Escape") {
+    keyBindings[listeningAction] = e.key;
+    saveKeyBindings(keyBindings);
+  }
+  listeningAction = null;
+  renderKeySettings();
+});
+
+document.getElementById("btn-open-settings").addEventListener("click", () => {
+  listeningAction = null;
+  renderKeySettings();
+  showScreen("settings");
+});
+document.getElementById("btn-back-settings").addEventListener("click", () => {
+  listeningAction = null;
+  showScreen("home");
+});
+document.getElementById("btn-reset-keys").addEventListener("click", () => {
+  keyBindings = { ...DEFAULT_KEY_BINDINGS };
+  saveKeyBindings(keyBindings);
+  renderKeySettings();
+});
+
 // ---------- Screen management ----------
 
 const screens = {};
@@ -332,11 +429,12 @@ document.getElementById("maze-dpad-left").addEventListener("click", () => moveMa
 document.getElementById("maze-dpad-right").addEventListener("click", () => moveMazePlayer(0, 1));
 
 document.addEventListener("keydown", (e) => {
+  if (listeningAction) return;
   if (!screens["maze-play"].classList.contains("hidden")) {
-    if (["ArrowUp", "w"].includes(e.key)) moveMazePlayer(-1, 0);
-    else if (["ArrowDown", "s"].includes(e.key)) moveMazePlayer(1, 0);
-    else if (["ArrowLeft", "a"].includes(e.key)) moveMazePlayer(0, -1);
-    else if (["ArrowRight", "d"].includes(e.key)) moveMazePlayer(0, 1);
+    if (e.key === keyBindings.up) moveMazePlayer(-1, 0);
+    else if (e.key === keyBindings.down) moveMazePlayer(1, 0);
+    else if (e.key === keyBindings.left) moveMazePlayer(0, -1);
+    else if (e.key === keyBindings.right) moveMazePlayer(0, 1);
   }
 });
 
@@ -817,7 +915,8 @@ function doJumpJump() {
 
 document.getElementById("btn-jump").addEventListener("click", doJumpJump);
 document.addEventListener("keydown", (e) => {
-  if (!screens["jump-play"].classList.contains("hidden") && e.key === " ") {
+  if (listeningAction) return;
+  if (!screens["jump-play"].classList.contains("hidden") && e.key === keyBindings.jump) {
     e.preventDefault();
     doJumpJump();
   }

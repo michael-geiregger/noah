@@ -14,10 +14,24 @@
 
 <!-- HOME SCREEN -->
 <section id="screen-home" class="screen">
-  <button id="btn-new-game" class="big-btn primary">➕ Neues Spiel bauen</button>
+  <div class="home-actions">
+    <button id="btn-new-game" class="big-btn primary">➕ Neues Spiel bauen</button>
+    <button id="btn-open-settings" class="big-btn secondary">⌨️ Tasten einstellen</button>
+  </div>
   <h2>Meine Spiele</h2>
   <div id="game-list" class="game-list"></div>
   <p id="empty-hint" class="hint">Du hast noch kein Spiel gebaut. Los geht's! 🚀</p>
+</section>
+
+<!-- KEY SETTINGS -->
+<section id="screen-settings" class="screen hidden">
+  <h2>⌨️ Tasten einstellen</h2>
+  <p class="hint">Klicke auf "Ändern" und drücke dann die gewünschte Taste. Mit Esc kannst du abbrechen.</p>
+  <div id="key-settings-list" class="key-settings-list"></div>
+  <div class="editor-actions">
+    <button id="btn-reset-keys" class="big-btn secondary">🔄 Zurücksetzen</button>
+    <button id="btn-back-settings" class="big-btn secondary">⬅ Zurück</button>
+  </div>
 </section>
 
 <!-- GAME TYPE PICKER -->
