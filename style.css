@@ -1,0 +1,227 @@
+:root {
+  --bg: #fef6e4;
+  --primary: #f582ae;
+  --secondary: #8bd3dd;
+  --accent: #f3d2c1;
+  --dark: #172c66;
+  --wall: #6b4226;
+  --coin: #ffd23f;
+  --enemy: #ef476f;
+  --goal: #06d6a0;
+  --start: #118ab2;
+  --tile-size: 40px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Comic Sans MS", "Trebuchet MS", sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+.app-header {
+  background: var(--dark);
+  padding: 16px;
+  text-align: center;
+}
+
+.app-header h1 {
+  color: white;
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.screen {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+  text-align: center;
+}
+
+.hidden { display: none; }
+
+.big-btn {
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 16px;
+  margin: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+  transition: transform 0.08s ease;
+  min-width: 120px;
+}
+.big-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+
+.primary { background: var(--primary); color: white; }
+.secondary { background: var(--secondary); color: var(--dark); }
+
+.size-options { display: flex; justify-content: center; flex-wrap: wrap; }
+.size-btn span { font-weight: normal; font-size: 0.9rem; }
+
+.game-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.game-card {
+  background: white;
+  border-radius: 14px;
+  padding: 14px;
+  width: 180px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+}
+
+.game-card h3 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  word-break: break-word;
+}
+
+.game-card .size-label {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.card-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+
+.card-actions button {
+  font-family: inherit;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.btn-play { background: var(--goal); color: white; }
+.btn-edit { background: var(--secondary); color: var(--dark); }
+.btn-delete { background: var(--enemy); color: white; }
+
+.hint { color: #777; font-style: italic; }
+
+.name-input {
+  font-family: inherit;
+  font-size: 1.1rem;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--secondary);
+  width: 90%;
+  max-width: 360px;
+  margin: 8px 0 16px;
+  text-align: center;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tool-btn {
+  font-family: inherit;
+  font-size: 1.4rem;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 3px solid transparent;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.tool-btn.selected {
+  border-color: var(--dark);
+  background: var(--accent);
+}
+
+.tool-btn .label {
+  display: block;
+  font-size: 0.6rem;
+  font-family: "Trebuchet MS", sans-serif;
+  margin-top: 2px;
+}
+
+.grid {
+  display: inline-grid;
+  gap: 2px;
+  background: #d9cfc1;
+  padding: 6px;
+  border-radius: 12px;
+  margin: 8px auto;
+  touch-action: none;
+  user-select: none;
+}
+
+.cell {
+  width: var(--tile-size);
+  height: var(--tile-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border-radius: 6px;
+  background: #fbf7ee;
+  cursor: pointer;
+}
+
+.cell.wall { background: var(--wall); }
+.cell.start { background: var(--start); }
+.cell.goal { background: var(--goal); }
+.cell.coin { background: #fff6d8; }
+.cell.enemy { background: #ffd6de; }
+.cell.player { box-shadow: inset 0 0 0 3px var(--dark); }
+
+.hud {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+#play-message { color: var(--enemy); min-width: 160px; }
+
+.dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 16px auto;
+}
+
+.dpad-row { display: flex; gap: 8px; }
+
+.dpad-btn {
+  font-size: 1.4rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: none;
+  background: var(--secondary);
+  margin: 4px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+}
+.dpad-btn:active { transform: translateY(2px); box-shadow: none; }
+
+.editor-actions { margin-top: 16px; }
+
+@media (max-width: 480px) {
+  :root { --tile-size: 30px; }
+  .app-header h1 { font-size: 1.3rem; }
+}
