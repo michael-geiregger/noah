@@ -15,9 +15,23 @@
 Dazu: Hell/Dunkel-Modus, Sprachen Deutsch/Englisch/Japanisch, läuft auf Handy, Tablet und PC.
 Kommentare von anderen erscheinen erst, wenn Noah sie im Admin-Bereich freigibt.
 
+## So ist der Admin-Bereich geschützt 🔒
+
+| Schutz | Wie |
+|---|---|
+| Verschlüsselte Verbindung | Vercel liefert die App nur über HTTPS aus, zusätzlich mit HSTS-Header |
+| Passwort | Anmeldung über Supabase. Passwörter werden dort nur verschlüsselt (bcrypt-Hash) gespeichert |
+| Rechte auf dem Server | Ob jemand ändern darf, prüft die **Datenbank selbst** (Row Level Security + Admin-Liste), nicht nur die App |
+| Kein Registrieren | Neue Konten sind abgeschaltet, nur das Admin-Konto existiert |
+| Versteckt | Der Admin-Knopf oben erscheint erst nach dem Anmelden (Zugang über 🔒 unten), keine Suchmaschinen |
+| Zu viele Versuche | Nach 5 falschen Passwörtern 1 Minute Pause (Supabase begrenzt zusätzlich) |
+| Auto-Abmelden | Nach 30 Minuten ohne Aktivität |
+
+Tipp: ein langes Passwort aus mehreren Wörtern wählen, z. B. `Rakete-Mond-Hebel-42`.
+
 ## Zwei Modi
 
-- **Demo-Modus** (ohne Supabase): Alles wird nur im eigenen Browser gespeichert. Admin-Passwort: `tpwe`.
+- **Demo-Modus** (ohne Supabase): Alles wird nur im eigenen Browser gespeichert. Admin-Passwort: `tpwe` (nur zum Ausprobieren, schützt nichts Echtes).
 - **Online-Modus** (mit Supabase): Erfindungen, Videos, Bestellungen, Bewertungen und Kommentare sind für alle auf jedem Gerät sichtbar.
 
 ## Einrichten (einmalig)

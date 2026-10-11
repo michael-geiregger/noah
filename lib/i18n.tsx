@@ -179,9 +179,24 @@ const dict = {
   adminPassword: { de: "Passwort", en: "Password", ja: "パスワード" },
   adminWrong: { de: "Das hat nicht geklappt. Passwort richtig?", en: "That didn't work. Correct password?", ja: "ログインできません。パスワードは正しい？" },
   adminDemoHint: {
-    de: "Demo-Modus: Daten bleiben nur in diesem Browser. Demo-Passwort: tpwe",
-    en: "Demo mode: data stays in this browser only. Demo password: tpwe",
-    ja: "デモモード：データはこのブラウザだけ。パスワード：tpwe",
+    de: "Demo-Modus: Daten bleiben nur in diesem Browser.",
+    en: "Demo mode: data stays in this browser only.",
+    ja: "デモモード：データはこのブラウザだけ。",
+  },
+  adminSecure: {
+    de: "🔒 Geschützter Bereich – nur für Noah.",
+    en: "🔒 Protected area – Noah only.",
+    ja: "🔒 ノア専用のエリアです。",
+  },
+  adminTooMany: {
+    de: "Zu viele Versuche. Bitte warte eine Minute.",
+    en: "Too many attempts. Please wait a minute.",
+    ja: "しっぱいが多すぎます。1分まってね。",
+  },
+  adminAutoLogout: {
+    de: "Du wurdest nach 30 Minuten ohne Aktivität automatisch abgemeldet.",
+    en: "You were logged out automatically after 30 minutes of inactivity.",
+    ja: "30分つかわなかったので、自動でログアウトしました。",
   },
   tabProducts: { de: "Erfindungen", en: "Inventions", ja: "発明品" },
   tabVideos: { de: "Videos", en: "Videos", ja: "どうが" },

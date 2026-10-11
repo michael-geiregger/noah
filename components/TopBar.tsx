@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ADMIN_CHANGED } from "@/lib/adminEvents";
+import { getApi } from "@/lib/data";
 import { LANGS, LANG_LABEL, useI18n, type DictKey } from "@/lib/i18n";
 
 const LINKS: { href: string; icon: string; label: DictKey }[] = [
@@ -10,13 +12,24 @@ const LINKS: { href: string; icon: string; label: DictKey }[] = [
   { href: "/spielen", icon: "🎮", label: "navPlay" },
   { href: "/shop", icon: "🛒", label: "navShop" },
   { href: "/videos", icon: "🎬", label: "navVideos" },
-  { href: "/admin", icon: "🔧", label: "navAdmin" },
 ];
+
+const ADMIN_LINK = { href: "/admin", icon: "🔧", label: "navAdmin" as DictKey };
 
 export function TopBar() {
   const { t, lang, setLang } = useI18n();
   const path = usePathname();
   const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Der Admin-Knopf erscheint nur, wenn Noah angemeldet ist.
+  useEffect(() => {
+    const check = () => getApi().isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+    check();
+    window.addEventListener(ADMIN_CHANGED, check);
+    return () => window.removeEventListener(ADMIN_CHANGED, check);
+  }, []);
 
   useEffect(() => {
     setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
@@ -41,7 +54,7 @@ export function TopBar() {
           TPWE
         </Link>
         <nav className="nav">
-          {LINKS.map((l) => (
+          {(isAdmin ? [...LINKS, ADMIN_LINK] : LINKS).map((l) => (
             <Link key={l.href} href={l.href} className={isActive(l.href) ? "active" : ""}>
               <span aria-hidden>{l.icon}</span>
               <span className="label">{t(l.label)}</span>
