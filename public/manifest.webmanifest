@@ -1,0 +1,9 @@
+{
+  "name": "TPWE – Noahs Erfinder-Welt",
+  "short_name": "TPWE",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffbe3",
+  "theme_color": "#2f8fd8",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
