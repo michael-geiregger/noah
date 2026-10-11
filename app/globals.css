@@ -71,10 +71,13 @@ h2 { font-size: 1.35rem; }
   font-weight: 900; font-size: 1.35rem; text-decoration: none; color: var(--text);
   letter-spacing: 0.04em;
 }
+.brand-name { color: var(--text); text-decoration: none; }
 .brand-logo {
+  text-decoration: none; transition: transform 0.3s;
   display: inline-grid; place-items: center; width: 36px; height: 36px;
   border-radius: 10px; background: var(--primary); color: var(--primary-ink); font-size: 1.2rem;
 }
+.brand-logo:hover { transform: rotate(90deg); }
 .nav { display: flex; gap: 4px; overflow-x: auto; flex: 1; scrollbar-width: none; }
 .nav::-webkit-scrollbar { display: none; }
 .nav a {

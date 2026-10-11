@@ -49,10 +49,15 @@ export function TopBar() {
   return (
     <header className="topbar">
       <div className="topbar-inner">
-        <Link href="/" className="brand" aria-label="TPWE">
-          <span className="brand-logo">⚙️</span>
-          TPWE
-        </Link>
+        <div className="brand">
+          {/* Das Zahnrad ist Noahs geheimer Eingang zum Admin-Bereich */}
+          <Link href="/admin" className="brand-logo" aria-label={t("navAdmin")}>
+            ⚙️
+          </Link>
+          <Link href="/" className="brand-name">
+            TPWE
+          </Link>
+        </div>
         <nav className="nav">
           {(isAdmin ? [...LINKS, ADMIN_LINK] : LINKS).map((l) => (
             <Link key={l.href} href={l.href} className={isActive(l.href) ? "active" : ""}>
