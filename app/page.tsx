@@ -13,13 +13,10 @@ export default function Home() {
         <p>{t("welcomeSub")}</p>
       </section>
 
-      <div className="grid-lg">
+      <div className="grid-3">
         <Tile href="/spielen" icon="🎮" title={t("navPlay")} sub={t("tilePlay")} variant="blue" big />
         <Tile href="/shop" icon="🛒" title={t("navShop")} sub={t("tileShop")} variant="yellow" big />
         <Tile href="/videos" icon="🎬" title={t("navVideos")} sub={t("tileVideos")} variant="blue" big />
-        <Tile href="/spielen/quiz" icon="❓" title={t("tileQuiz")} sub={t("tileQuizSub")} variant="yellow" big />
-        <Tile href="/spielen/raetsel" icon="🧩" title={t("tileRiddles")} sub={t("tileRiddlesSub")} variant="blue" big />
-        <Tile href="/spielen/planeten" icon="🪐" title={t("simGravity")} sub={t("simGravitySub")} variant="yellow" big />
       </div>
     </>
   );

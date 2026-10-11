@@ -208,3 +208,6 @@ details.translations summary { cursor: pointer; font-weight: 800; }
 details.translations[open] { display: flex; flex-direction: column; gap: 10px; }
 
 .footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 24px 16px 40px; }
+
+input[type="range"] { padding: 0; accent-color: var(--primary); height: 28px; }
+.grid-3 { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }

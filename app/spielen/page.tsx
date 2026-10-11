@@ -12,6 +12,7 @@ export default function PlayPage() {
 
       <h2 className="section-title">🔬 {t("simSection")}</h2>
       <div className="grid">
+        <Tile href="/spielen/rakete" icon="🚀" title={t("simRocket")} sub={t("simRocketSub")} variant="yellow" />
         <Tile href="/spielen/planeten" icon="🪐" title={t("simGravity")} sub={t("simGravitySub")} variant="blue" />
         <Tile href="/spielen/wippe" icon="⚖️" title={t("simLever")} sub={t("simLeverSub")} variant="yellow" />
         <Tile href="/spielen/stromkreis" icon="💡" title={t("simCircuit")} sub={t("simCircuitSub")} variant="blue" />
