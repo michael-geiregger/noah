@@ -32,6 +32,22 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
 
   const me = async () => (await sb.auth.getSession()).data.session;
 
+  /** Verbindung abgebrochen (z. B. Safari "Load failed") statt echter Antwort vom Server? */
+  const isNetworkError = (e: { name?: string; status?: number } | null) =>
+    !!e && e.name === "AuthRetryableFetchError" && !e.status;
+
+  /** Ist der Supabase-Server überhaupt erreichbar? (pausiertes Projekt, falsche Adresse …) */
+  const networkErrorKind = async () => {
+    try {
+      const res = await fetch(`${url}/auth/v1/health`, { headers: { apikey: anonKey }, cache: "no-store" });
+      return res.ok ? "network" : "server-unreachable";
+    } catch {
+      return "server-unreachable";
+    }
+  };
+
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   /** Ruft eine Server-Funktion der App auf (mit dem Anmelde-Ausweis). */
   const callApi = async <T>(path: string, body: unknown): Promise<T> => {
     const session = await me();
@@ -127,13 +143,23 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
     },
 
     async signUp(email, password, displayName) {
-      const { data, error } = await sb.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: displayName } },
-      });
-      if (error) throw new Error(error.message.includes("already") ? "already-registered" : error.message);
-      return data.session ? "ok" : "confirm-email";
+      for (let attempt = 1; ; attempt++) {
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: displayName } },
+        });
+        if (!error) return data.session ? "ok" : "confirm-email";
+        if (!isNetworkError(error)) throw new Error(error.message.includes("already") ? "already-registered" : error.message);
+
+        // Verbindung abgebrochen: Wurde das Konto trotzdem angelegt? Dann einfach anmelden.
+        await wait(1500);
+        const login = await sb.auth.signInWithPassword({ email, password });
+        if (!login.error) return "ok";
+        if (/not confirmed/i.test(login.error.message)) return "confirm-email";
+        if (attempt >= 2 || isNetworkError(login.error)) throw new Error(await networkErrorKind());
+        // Konto gibt es noch nicht → ein zweiter Versuch
+      }
     },
     async getMyProfile() {
       const session = await me();
@@ -280,7 +306,8 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
     },
     async login(email, password) {
       const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw new Error("wrong-password");
+      if (error && isNetworkError(error)) throw new Error(await networkErrorKind());
+      if (error) throw new Error(/not confirmed/i.test(error.message) ? "confirm-email" : "wrong-password");
     },
     async logout() {
       await sb.auth.signOut();

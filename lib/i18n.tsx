@@ -295,6 +295,21 @@ const dict = {
   },
   accAlready: { de: "Diese E-Mail hat schon ein Konto. Melde dich an!", en: "This email already has an account. Log in!", ja: "このメールはもう登録されています。ログインしてね！" },
   accWrong: { de: "E-Mail oder Passwort stimmt nicht.", en: "Email or password is wrong.", ja: "メールかパスワードがちがいます。" },
+  accNetwork: {
+    de: "Die Verbindung ist unterwegs abgebrochen. Bitte prüfe das Internet und versuche es gleich nochmal.",
+    en: "The connection dropped. Please check your internet and try again.",
+    ja: "通信がとちゅうで切れました。インターネットをかくにんして、もう一度ためしてね。",
+  },
+  accServerDown: {
+    de: "Der Server ist gerade nicht erreichbar. Bitte später nochmal versuchen. (Für Eltern: In Supabase prüfen, ob das Projekt pausiert ist.)",
+    en: "The server can't be reached right now. Please try again later. (For parents: check in Supabase whether the project is paused.)",
+    ja: "いまサーバーにつながりません。あとでもう一度ためしてね。（おうちの人へ：Supabaseでプロジェクトが一時停止していないか確認してください）",
+  },
+  accNotConfirmed: {
+    de: "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail.",
+    en: "Please confirm your email address first using the link in the email.",
+    ja: "まずメールのリンクをおして、アドレスをかくにんしてね。",
+  },
   accLogout: { de: "Abmelden", en: "Log out", ja: "ログアウト" },
   accRank: { de: "Rang", en: "Rank", ja: "ランク" },
   accStars: { de: "Raketen-Sterne", en: "Rocket stars", ja: "ロケットの星" },

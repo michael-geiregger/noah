@@ -99,7 +99,7 @@ function Login({ onDone }: { onDone: () => void }) {
   const api = getApi();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<false | "wrong" | "network" | "server-unreachable">(false);
   const [busy, setBusy] = useState(false);
   const [lockedUntil, setLockedUntil] = useState(0);
   const fails = useRef(0);
@@ -114,10 +114,11 @@ function Login({ onDone }: { onDone: () => void }) {
       if (await api.isAdmin()) onDone();
       else {
         await api.logout();
-        setError(true);
+        setError("wrong");
       }
-    } catch {
-      setError(true);
+    } catch (err) {
+      const m = err instanceof Error ? err.message : "";
+      setError(m === "network" || m === "server-unreachable" ? m : "wrong");
       // Nach 5 Fehlversuchen eine Minute Pause
       fails.current += 1;
       if (fails.current >= 5) {
@@ -146,7 +147,9 @@ function Login({ onDone }: { onDone: () => void }) {
           {t("adminPassword")}
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
         </label>
-        {error && !locked && <p className="err">{t("adminWrong")}</p>}
+        {error && !locked && (
+          <p className="err">{error === "network" ? t("accNetwork") : error === "server-unreachable" ? t("accServerDown") : t("adminWrong")}</p>
+        )}
         {locked && <p className="err">{t("adminTooMany")}</p>}
         <button className="btn" disabled={busy || locked}>
           {t("adminLogin")}

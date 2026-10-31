@@ -182,7 +182,13 @@ function AuthForms() {
       }
     } catch (err) {
       const m = err instanceof Error ? err.message : "";
-      setMsg({ ok: false, text: m === "already-registered" ? t("accAlready") : mode === "login" ? t("accWrong") : `${t("errorGeneric")} ${m}` });
+      const known: Record<string, string> = {
+        "already-registered": t("accAlready"),
+        network: t("accNetwork"),
+        "server-unreachable": t("accServerDown"),
+        "confirm-email": t("accNotConfirmed"),
+      };
+      setMsg({ ok: false, text: known[m] ?? (mode === "login" ? t("accWrong") : `${t("errorGeneric")} ${m}`) });
     } finally {
       setBusy(false);
     }
