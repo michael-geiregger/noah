@@ -150,7 +150,13 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
           options: { data: { display_name: displayName } },
         });
         if (!error) return data.session ? "ok" : "confirm-email";
-        if (!isNetworkError(error)) throw new Error(error.message.includes("already") ? "already-registered" : error.message);
+        if (!isNetworkError(error)) {
+          const m = error.message;
+          if (/already/i.test(m)) throw new Error("already-registered");
+          if (/signups? not allowed|signup.*disabled/i.test(m)) throw new Error("signup-disabled");
+          if (/not authorized|rate limit|sending.*email|confirmation email/i.test(m)) throw new Error(`email-setup:${m}`);
+          throw new Error(m);
+        }
 
         // Verbindung abgebrochen: Wurde das Konto trotzdem angelegt? Dann einfach anmelden.
         await wait(1500);

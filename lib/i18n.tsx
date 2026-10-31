@@ -310,6 +310,17 @@ const dict = {
     en: "Please confirm your email address first using the link in the email.",
     ja: "まずメールのリンクをおして、アドレスをかくにんしてね。",
   },
+  accSignupOff: {
+    de: "Neue Konten sind gerade ausgeschaltet. (Für Eltern: In Supabase „Allow new users to sign up“ einschalten.)",
+    en: "New accounts are switched off right now. (For parents: enable “Allow new users to sign up” in Supabase.)",
+    ja: "いまは新しいアカウントを作れません。（おうちの人へ：Supabaseで「Allow new users to sign up」をオンにしてください）",
+  },
+  accEmailSetup: {
+    de: "Supabase kann keine Bestätigungs-Mail schicken. (Für Eltern: In Supabase „Confirm email“ ausschalten.)",
+    en: "Supabase can't send the confirmation email. (For parents: turn off “Confirm email” in Supabase.)",
+    ja: "確認メールが送れません。（おうちの人へ：Supabaseで「Confirm email」をオフにしてください）",
+  },
+  accCheckLink: { de: "Zur Einrichtungs-Prüfung (für Eltern)", en: "Open setup check (for parents)", ja: "設定チェック（おうちの人向け）" },
   accLogout: { de: "Abmelden", en: "Log out", ja: "ログアウト" },
   accRank: { de: "Rang", en: "Rank", ja: "ランク" },
   accStars: { de: "Raketen-Sterne", en: "Rocket stars", ja: "ロケットの星" },

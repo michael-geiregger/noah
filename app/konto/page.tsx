@@ -160,7 +160,7 @@ function AuthForms() {
   const [password, setPassword] = useState("");
   const [parents, setParents] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string; check?: boolean } | null>(null);
 
   const done = () => {
     notifyAuthChanged();
@@ -188,7 +188,9 @@ function AuthForms() {
         "server-unreachable": t("accServerDown"),
         "confirm-email": t("accNotConfirmed"),
       };
-      setMsg({ ok: false, text: known[m] ?? (mode === "login" ? t("accWrong") : `${t("errorGeneric")} ${m}`) });
+      if (m === "signup-disabled") known[m] = t("accSignupOff");
+      if (m.startsWith("email-setup:")) known[m] = `${t("accEmailSetup")} [${m.slice(12)}]`;
+      setMsg({ ok: false, text: known[m] ?? (mode === "login" ? t("accWrong") : `${t("errorGeneric")} [${m}]`), check: true });
     } finally {
       setBusy(false);
     }
@@ -235,6 +237,11 @@ function AuthForms() {
           </label>
         )}
         {msg && <p className={msg.ok ? "ok" : "err"}>{msg.text}</p>}
+        {msg?.check && api.mode === "online" && (
+          <p className="muted" style={{ margin: 0 }}>
+            🩺 <Link href="/check">{t("accCheckLink")}</Link>
+          </p>
+        )}
         <button className="btn" disabled={busy}>
           {mode === "login" ? t("accLoginTab") : t("accCreate")}
         </button>
