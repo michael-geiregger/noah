@@ -92,7 +92,7 @@ Tipp: ein langes Passwort aus mehreren Wörtern wählen, z. B. `Rakete-Mond-Hebe
 Vorher die Platzhalter auf `/rechtliches` (Impressum, AGB, Widerruf, Datenschutz) ausfüllen.
 
 ### 4. DELUXE-Extras und Bezahlpflicht einrichten
-1. **Supabase → SQL Editor**: `supabase/extras.sql` einfügen → *Run*.
+1. **Supabase → SQL Editor**: `supabase/extras.sql` einfügen → *Run* (oder alles auf einmal: `supabase/setup-deluxe.sql`).
    Falls ihr früher `paywall.sql` ausgeführt habt: `supabase/normal-frei.sql` ausführen (macht Shop & Videos wieder für alle frei).
 2. **Professor Zahnrad**: auf <https://platform.claude.com> ein Konto anlegen, Guthaben aufladen
    (z. B. 5 $ reichen für sehr viele Kinderfragen), unter *API Keys* einen Schlüssel erstellen.
