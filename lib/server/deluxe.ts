@@ -64,18 +64,23 @@ export async function grantFromSession(session: Stripe.Checkout.Session): Promis
   return true;
 }
 
-/** DELUXE-Mitglied (nicht gesperrt) oder Admin? */
-export async function canUseDeluxe(user: { id: string; email: string | null }) {
+/** Zugang: DELUXE-Mitglied (nicht gesperrt) oder Admin? Liefert auch Name und Bild. */
+export async function accessFor(user: { id: string; email: string | null }) {
   const db = supabaseAdmin();
   const [{ data: membership }, { data: profile }, { data: admins }] = await Promise.all([
     db.from("memberships").select("user_id").eq("user_id", user.id).maybeSingle(),
-    db.from("profiles").select("blocked").eq("id", user.id).maybeSingle(),
+    db.from("profiles").select("blocked, display_name, avatar").eq("id", user.id).maybeSingle(),
     db.from("admins").select("email"),
   ]);
   // exakter Vergleich (ohne Platzhalter wie % oder _)
   const email = user.email?.toLowerCase();
-  if (email && (admins ?? []).some((a: { email: string }) => a.email.toLowerCase() === email)) return true;
-  return !!membership && !profile?.blocked;
+  const admin = !!email && (admins ?? []).some((a: { email: string }) => a.email.toLowerCase() === email);
+  const member = !!membership && !profile?.blocked;
+  return { allowed: admin || member, admin, displayName: (profile?.display_name as string | undefined) ?? "Erfinder" };
+}
+
+export async function canUseDeluxe(user: { id: string; email: string | null }) {
+  return (await accessFor(user)).allowed;
 }
 
 export function json(body: unknown, status = 200) {

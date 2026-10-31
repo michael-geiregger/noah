@@ -133,6 +133,23 @@ export type AiQuestion = { id: number; created_at: string; user_id: string; ques
 
 export type ProfessorTurn = { question: string; answer: string };
 
+export type CallStatus = "neu" | "bestaetigt" | "abgelehnt" | "erledigt";
+
+export type CallRequest = {
+  id: string;
+  created_at: string;
+  user_id: string;
+  author_name: string;
+  author_avatar: string;
+  wish: string;
+  message?: string | null;
+  adult_present: boolean;
+  status: CallStatus;
+  scheduled_at: string | null;
+};
+
+export type CallJoin = { url: string; token: string; endsAt: string };
+
 export interface DataApi {
   mode: "demo" | "online";
 
@@ -194,6 +211,14 @@ export interface DataApi {
   deleteBoardPost(id: string): Promise<void>;
   askProfessor(question: string, lang: string, history: ProfessorTurn[]): Promise<{ answer: string; remaining: number }>;
   listAiQuestions(): Promise<AiQuestion[]>;
+
+  // Funkraum & Privat-Gespräche
+  listCallRequests(): Promise<CallRequest[]>;
+  addCallRequest(r: { wish: string; message: string | null; adult_present: boolean }): Promise<void>;
+  updateCallRequest(id: string, patch: { status: CallStatus; scheduled_at?: string | null }): Promise<void>;
+  deleteCallRequest(id: string): Promise<void>;
+  /** Persönlicher Zutritt zum Video-Raum (nur zu den erlaubten Zeiten) */
+  joinCall(kind: "group" | "private", lang: string, requestId?: string): Promise<CallJoin>;
 
   // Admin: Mitglieder
   listMembers(): Promise<Member[]>;

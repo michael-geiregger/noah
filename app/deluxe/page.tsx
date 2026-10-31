@@ -15,8 +15,8 @@ const PERKS: { icon: string; title: DictKey; sub: DictKey; href?: string; soon?:
   { icon: "🤖", title: "dlxPerkProf", sub: "dlxPerkProfSub", href: "/deluxe/professor" },
   { icon: "🪙", title: "dlxPerkTaler", sub: "dlxPerkTalerSub", href: "/deluxe/taler" },
   { icon: "📌", title: "dlxPerkPinboard", sub: "dlxPerkPinboardSub", href: "/deluxe/pinnwand" },
-  { icon: "📡", title: "dlxPerkRadio", sub: "dlxPerkRadioSub", soon: true },
-  { icon: "📞", title: "dlxPerkPrivate", sub: "dlxPerkPrivateSub", soon: true },
+  { icon: "📡", title: "dlxPerkRadio", sub: "dlxPerkRadioSub", href: "/deluxe/funkraum" },
+  { icon: "📞", title: "dlxPerkPrivate", sub: "dlxPerkPrivateSub", href: "/deluxe/funkraum" },
   { icon: "💎", title: "dlxPerkBadge", sub: "dlxPerkBadgeSub" },
 ];
 

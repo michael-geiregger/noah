@@ -16,6 +16,8 @@
 | 🤖 Professor Zahnrad | DELUXE: kindgerechter KI-Erfinder-Lehrer (Claude), 20 Fragen pro Tag, alle Fragen sieht Noah im Admin |
 | 🪙 TPWE-Taler | DELUXE: 1 Taler pro Stern/Quiz-Punkt, im Taler-Shop gegen Noahs Belohnungen tauschen |
 | 📌 Erfinder-Pinnwand | DELUXE: Ideen teilen – jeder Beitrag erscheint erst nach Noahs Freigabe |
+| 📡 Funkraum | DELUXE: Video-Treffen jeden Samstag 13:00–13:30 (Wiener Zeit), Noah ist Chef und kann stummschalten/entfernen |
+| 📞 Privat-Gespräch | DELUXE: nur auf Anfrage – Noah bestätigt und legt die Uhrzeit fest, ein Erwachsener muss dabei sein |
 | 🔧 Admin | Erfindungen und Videos anlegen, Bestellungen bearbeiten, Kommentare freigeben, Mitglieder verwalten |
 
 **Bezahlpflicht:** Ohne DELUXE (einmalig 10,50 €) sieht man nur die Startseite mit „Anmelden“ und „DELUXE kaufen“.
@@ -97,6 +99,20 @@ Vorher die Platzhalter auf `/rechtliches` (Impressum, AGB, Widerruf, Datenschutz
 
 Alle Sicherheitsregeln (wer was lesen/ändern darf) sind in den SQL-Dateien festgelegt und wurden
 gegen eine echte PostgreSQL-Datenbank getestet.
+
+### 5. Funkraum (Video-Calls) einrichten
+1. **Supabase → SQL Editor**: `supabase/funkraum.sql` einfügen → *Run*.
+2. Auf <https://dashboard.daily.co> ein kostenloses Konto anlegen (Gratis-Tarif: 10.000 Teilnehmer-Minuten/Monat).
+3. **Developers → API key** kopieren und in **Vercel** als `DAILY_API_KEY` eintragen → *Redeploy*.
+
+**Schutzregeln im Funkraum**
+- Nur zahlende DELUXE-Mitglieder, nur Samstag 13:00–13:30 (Noah darf 15 Min. früher hinein), um 13:30 werden alle automatisch getrennt.
+- Jeder bekommt einen persönlichen Schlüssel nur für diesen Raum und diese Zeit; der Name kommt vom Erfinder-Ausweis.
+- Noah ist „Owner“: kann stummschalten und Leute entfernen. Gesperrte Konten kommen nicht mehr hinein.
+- Kein Text-Chat und keine Bildschirmfreigabe; vor dem Betreten müssen die Regeln bestätigt werden.
+- Privat-Gespräche: keine direkten Anrufe – nur Anfragen (max. 2 offen), die Noah bestätigt und terminiert.
+  Beide Seiten bestätigen, dass ein Erwachsener dabei ist. Raum offen 10 Min. vor bis 30 Min. nach dem Termin, max. 3 Teilnehmer.
+- Zeiten ändern: `lib/funkraum.ts` (`RADIO_SCHEDULE`).
 
 ### Auf dem Handy wie eine App
 Seite öffnen → Teilen → **Zum Home-Bildschirm**.

@@ -3,6 +3,7 @@
 import type {
   AiQuestion,
   BoardPost,
+  CallRequest,
   Challenge,
   Comment,
   DataApi,
@@ -37,6 +38,7 @@ type Db = {
   redemptions?: Redemption[];
   posts?: BoardPost[];
   aiQuestions?: AiQuestion[];
+  calls?: CallRequest[];
 };
 
 const DEMO_REWARDS: Omit<Reward, "id" | "created_at">[] = [
@@ -424,6 +426,37 @@ export function createLocalApi(): DataApi {
     },
     async listAiQuestions() {
       return [...(load().aiQuestions ?? [])].sort(byNewest);
+    },
+
+    async listCallRequests() {
+      const db = load();
+      const me = currentUser(db);
+      return (db.calls ?? []).filter((c) => isAdminLocal() || c.user_id === me?.id).sort(byNewest);
+    },
+    async addCallRequest(r) {
+      const db = load();
+      const me = currentUser(db);
+      if (!me || !isMember(db, me)) throw new Error("not-member");
+      if (!r.adult_present) throw new Error("adult-required");
+      const open = (db.calls ?? []).filter((c) => c.user_id === me.id && (c.status === "neu" || c.status === "bestaetigt"));
+      if (open.length >= 2) throw new Error("too-many-requests");
+      (db.calls ??= []).push({
+        ...r, id: uid(), created_at: now(), user_id: me.id, author_name: me.display_name, author_avatar: me.avatar, status: "neu", scheduled_at: null,
+      });
+      save(db);
+    },
+    async updateCallRequest(id, patch) {
+      const db = load();
+      db.calls = (db.calls ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c));
+      save(db);
+    },
+    async deleteCallRequest(id) {
+      const db = load();
+      db.calls = (db.calls ?? []).filter((c) => c.id !== id);
+      save(db);
+    },
+    async joinCall() {
+      throw new Error("demo-video");
     },
 
     async listMembers() {

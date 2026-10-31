@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import type {
   AiQuestion,
   BoardPost,
+  CallJoin,
+  CallRequest,
   Challenge,
   Comment,
   DataApi,
@@ -236,6 +238,23 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
     },
     async listAiQuestions() {
       return check(await sb.from("ai_questions").select("*").order("created_at", { ascending: false }).limit(200)) as AiQuestion[];
+    },
+
+    async listCallRequests() {
+      return check(await sb.from("call_requests").select("*").order("created_at", { ascending: false })) as CallRequest[];
+    },
+    async addCallRequest(r) {
+      const { error } = await sb.from("call_requests").insert(r);
+      if (error) throw new Error(error.message.includes("too-many-requests") ? "too-many-requests" : error.message);
+    },
+    async updateCallRequest(id, patch) {
+      check(await sb.from("call_requests").update(patch).eq("id", id));
+    },
+    async deleteCallRequest(id) {
+      check(await sb.from("call_requests").delete().eq("id", id));
+    },
+    async joinCall(kind, lang, requestId) {
+      return callApi<CallJoin>("/api/funkraum", { kind, lang, requestId });
     },
 
     async listMembers() {
