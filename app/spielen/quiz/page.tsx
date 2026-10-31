@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { notifyAuthChanged } from "@/lib/adminEvents";
+import { getApi } from "@/lib/data";
 import { BackLink } from "@/components/BackLink";
 import { QUIZ } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
@@ -11,6 +13,11 @@ export default function QuizPage() {
   const [chosen, setChosen] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const done = index >= QUIZ.length;
+
+  // Bestes Ergebnis auf dem Erfinder-Ausweis speichern
+  useEffect(() => {
+    if (done) getApi().saveQuizScore(score).then(notifyAuthChanged).catch(() => {});
+  }, [done, score]);
 
   const choose = (i: number) => {
     if (chosen !== null) return;

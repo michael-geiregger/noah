@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { BackLink } from "@/components/BackLink";
 import { useI18n, type DictKey, type Tri } from "@/lib/i18n";
+import Link from "next/link";
+import { notifyAuthChanged } from "@/lib/adminEvents";
+import { getApi } from "@/lib/data";
 import { audio, beep, jingle, rocketSound, speak, stopSpeaking } from "@/lib/sound";
+import { useAccount } from "@/lib/useAccount";
 
 // Spielfeld (SVG-Einheiten)
 const W = 400;
@@ -44,6 +48,7 @@ export default function RocketPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [totalStars, setTotalStars] = useState(0);
   const [sound, setSound] = useState(true);
+  const { profile } = useAccount();
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const frame = useRef<number | null>(null);
@@ -143,6 +148,11 @@ export default function RocketPage() {
     else r = { stars: 0, msg: "rocketMiss", hint: dx < 0 ? "rocketTooShort" : "rocketTooFar" };
     setResult(r);
     if (r.stars) {
+      // Auf dem Erfinder-Ausweis speichern (wenn angemeldet)
+      getApi()
+        .addRocketStars(r.stars)
+        .then(notifyAuthChanged)
+        .catch(() => {});
       setTotalStars((old) => {
         const next = old + r.stars;
         try {
@@ -187,6 +197,11 @@ export default function RocketPage() {
         </div>
       </div>
       <p className="muted">{t("rocketHelp")}</p>
+      {!profile && (
+        <p className="muted">
+          🪪 <Link href="/konto?next=/spielen/rakete">{t("accLoginToSave")}</Link>
+        </p>
+      )}
 
       <div className="card form">
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", borderRadius: 14, display: "block" }}>

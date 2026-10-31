@@ -1,8 +1,10 @@
 // Demo-Modus: alles wird nur im Browser gespeichert (localStorage).
 // Gut zum Ausprobieren – andere Geräte sehen diese Daten nicht.
-import type { Comment, DataApi, Order, Product, Rating, Video } from "./types";
+import type { Comment, DataApi, Member, Membership, Order, Product, Profile, Rating, Video } from "./types";
 
 export const DEMO_PASSWORD = "tpwe";
+
+type DemoUser = Profile & { password: string };
 
 type Db = {
   products: Product[];
@@ -10,10 +12,13 @@ type Db = {
   ratings: Rating[];
   comments: Comment[];
   orders: Order[];
+  users?: DemoUser[];
+  memberships?: Membership[];
 };
 
 const KEY = "tpwe-demo-db";
 const ADMIN_KEY = "tpwe-demo-admin";
+const USER_KEY = "tpwe-demo-user";
 
 const now = () => new Date().toISOString();
 const uid = () =>
@@ -82,7 +87,22 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
+function currentUser(db: Db): DemoUser | null {
+  const id = localStorage.getItem(USER_KEY);
+  return db.users?.find((u) => u.id === id) ?? null;
+}
+
+const toProfile = ({ password: _p, ...profile }: DemoUser): Profile => profile;
+
 export function createLocalApi(): DataApi {
+  const updateMe = (patch: Partial<Profile>) => {
+    const db = load();
+    const me = currentUser(db);
+    if (!me) throw new Error("not-logged-in");
+    db.users = db.users!.map((u) => (u.id === me.id ? { ...u, ...patch } : u));
+    save(db);
+  };
+
   return {
     mode: "demo",
 
@@ -178,15 +198,96 @@ export function createLocalApi(): DataApi {
       save(db);
     },
 
+    async signUp(email, password, displayName) {
+      const db = load();
+      db.users ??= [];
+      if (db.users.some((u) => u.email?.toLowerCase() === email.toLowerCase())) throw new Error("already-registered");
+      const user: DemoUser = {
+        id: uid(),
+        created_at: now(),
+        email,
+        password,
+        display_name: displayName.slice(0, 30) || "Erfinder",
+        avatar: "🧑‍🔬",
+        rocket_stars: 0,
+        quiz_best: 0,
+        blocked: false,
+      };
+      db.users.push(user);
+      save(db);
+      localStorage.setItem(USER_KEY, user.id);
+      return "ok";
+    },
+    async getMyProfile() {
+      const me = currentUser(load());
+      return me ? toProfile(me) : null;
+    },
+    async updateMyProfile(p) {
+      updateMe(p);
+    },
+    async addRocketStars(n) {
+      const me = currentUser(load());
+      if (me && n > 0) updateMe({ rocket_stars: me.rocket_stars + n });
+    },
+    async saveQuizScore(score) {
+      const me = currentUser(load());
+      if (me && score > me.quiz_best) updateMe({ quiz_best: score });
+    },
+
+    async getMyMembership() {
+      const db = load();
+      const me = currentUser(db);
+      return (me && db.memberships?.find((m) => m.user_id === me.id)) || null;
+    },
+    async startCheckout() {
+      // Demo: Bezahlung wird nur simuliert
+      const db = load();
+      const me = currentUser(db);
+      if (!me) throw new Error("not-logged-in");
+      db.memberships ??= [];
+      if (!db.memberships.some((m) => m.user_id === me.id))
+        db.memberships.push({ user_id: me.id, paid_at: now(), amount_cents: 1050, source: "stripe" });
+      save(db);
+      return "/deluxe?session_id=demo";
+    },
+    async confirmCheckout() {
+      return !!(await this.getMyMembership());
+    },
+
+    async listMembers() {
+      const db = load();
+      return (db.users ?? [])
+        .map((u): Member => ({ ...toProfile(u), membership: db.memberships?.find((m) => m.user_id === u.id) ?? null }))
+        .sort(byNewest);
+    },
+    async adminSetMembership(userId, active) {
+      const db = load();
+      db.memberships = (db.memberships ?? []).filter((m) => m.user_id !== userId);
+      if (active) db.memberships.push({ user_id: userId, paid_at: now(), amount_cents: 0, source: "admin" });
+      save(db);
+    },
+    async adminSetBlocked(userId, blocked) {
+      const db = load();
+      db.users = (db.users ?? []).map((u) => (u.id === userId ? { ...u, blocked } : u));
+      save(db);
+    },
+
     async isAdmin() {
       return localStorage.getItem(ADMIN_KEY) === "1";
     },
-    async login(_email, password) {
+    async login(email, password) {
+      const db = load();
+      const user = db.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase() && u.password === password);
+      if (user) {
+        localStorage.setItem(USER_KEY, user.id);
+        return;
+      }
       if (password !== DEMO_PASSWORD) throw new Error("wrong-password");
       localStorage.setItem(ADMIN_KEY, "1");
     },
     async logout() {
       localStorage.removeItem(ADMIN_KEY);
+      localStorage.removeItem(USER_KEY);
     },
   };
 }

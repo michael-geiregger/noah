@@ -7,7 +7,10 @@ export function Footer() {
   const { t } = useI18n();
   return (
     <footer className="footer">
-      <strong>TPWE</strong> · {t("appLong")} · © Noah ·{" "}
+      <Link href="/rechtliches" style={{ color: "inherit" }}>
+        {t("legalTitle")}
+      </Link>{" "}
+      · <strong>TPWE</strong> · {t("appLong")} · © Noah ·{" "}
       <Link href="/admin" aria-label={t("navAdmin")} style={{ textDecoration: "none" }}>
         🔒
       </Link>

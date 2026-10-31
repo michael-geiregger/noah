@@ -1,6 +1,6 @@
 // Online-Modus: alle Daten liegen in Supabase und sind auf jedem Gerät gleich.
 import { createClient } from "@supabase/supabase-js";
-import type { Comment, DataApi, Order, Product, Rating, Video } from "./types";
+import type { Comment, DataApi, Member, Membership, Order, Product, Profile, Rating, Video } from "./types";
 
 const BUCKET = "media";
 
@@ -10,6 +10,22 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
   const check = <T>({ data, error }: { data: T; error: { message: string } | null }): T => {
     if (error) throw new Error(error.message);
     return data;
+  };
+
+  const me = async () => (await sb.auth.getSession()).data.session;
+
+  /** Ruft eine Server-Funktion der App auf (mit dem Anmelde-Ausweis). */
+  const callApi = async <T>(path: string, body: unknown): Promise<T> => {
+    const session = await me();
+    if (!session) throw new Error("not-logged-in");
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || `http-${res.status}`);
+    return json as T;
   };
 
   return {
@@ -90,6 +106,67 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
     },
     async deleteOrder(id) {
       check(await sb.from("orders").delete().eq("id", id));
+    },
+
+    async signUp(email, password, displayName) {
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: displayName } },
+      });
+      if (error) throw new Error(error.message.includes("already") ? "already-registered" : error.message);
+      return data.session ? "ok" : "confirm-email";
+    },
+    async getMyProfile() {
+      const session = await me();
+      if (!session) return null;
+      return check(await sb.from("profiles").select("*").eq("id", session.user.id).maybeSingle()) as Profile | null;
+    },
+    async updateMyProfile(p) {
+      const session = await me();
+      if (!session) throw new Error("not-logged-in");
+      check(await sb.from("profiles").update(p).eq("id", session.user.id));
+    },
+    async addRocketStars(n) {
+      const profile = await this.getMyProfile();
+      if (!profile || n <= 0) return;
+      check(await sb.from("profiles").update({ rocket_stars: profile.rocket_stars + n }).eq("id", profile.id));
+    },
+    async saveQuizScore(score) {
+      const profile = await this.getMyProfile();
+      if (!profile || score <= profile.quiz_best) return;
+      check(await sb.from("profiles").update({ quiz_best: score }).eq("id", profile.id));
+    },
+
+    async getMyMembership() {
+      const session = await me();
+      if (!session) return null;
+      return check(
+        await sb.from("memberships").select("user_id, paid_at, amount_cents, source").eq("user_id", session.user.id).maybeSingle(),
+      ) as Membership | null;
+    },
+    async startCheckout(lang) {
+      const { url } = await callApi<{ url: string }>("/api/checkout", { lang });
+      return url;
+    },
+    async confirmCheckout(sessionId) {
+      const { member } = await callApi<{ member: boolean }>("/api/checkout/confirm", { sessionId });
+      return member;
+    },
+
+    async listMembers() {
+      const [profiles, memberships] = await Promise.all([
+        sb.from("profiles").select("*").order("created_at", { ascending: false }),
+        sb.from("memberships").select("user_id, paid_at, amount_cents, source"),
+      ]);
+      const byUser = new Map((check(memberships) as Membership[]).map((m) => [m.user_id, m]));
+      return (check(profiles) as Profile[]).map((p): Member => ({ ...p, membership: byUser.get(p.id) ?? null }));
+    },
+    async adminSetMembership(userId, active) {
+      check(await sb.rpc("admin_set_membership", { target: userId, active }));
+    },
+    async adminSetBlocked(userId, blocked) {
+      check(await sb.rpc("admin_set_blocked", { target: userId, value: blocked }));
     },
 
     async isAdmin() {

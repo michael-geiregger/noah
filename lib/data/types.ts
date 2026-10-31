@@ -58,6 +58,28 @@ export type NewComment = { author_name: string; text: string } & CommentTarget;
 
 export type NewOrder = Omit<Order, "id" | "created_at" | "status">;
 
+export type Profile = {
+  id: string;
+  created_at: string;
+  email?: string | null;
+  display_name: string;
+  avatar: string;
+  rocket_stars: number;
+  quiz_best: number;
+  blocked: boolean;
+};
+
+export type Membership = {
+  user_id: string;
+  paid_at: string;
+  amount_cents: number;
+  source: "stripe" | "admin";
+};
+
+export type Member = Profile & { membership: Membership | null };
+
+export type SignUpResult = "ok" | "confirm-email";
+
 export interface DataApi {
   mode: "demo" | "online";
 
@@ -85,6 +107,25 @@ export interface DataApi {
   listOrders(): Promise<Order[]>;
   setOrderStatus(id: string, status: OrderStatus): Promise<void>;
   deleteOrder(id: string): Promise<void>;
+
+  // Konten & Erfinder-Ausweis
+  signUp(email: string, password: string, displayName: string): Promise<SignUpResult>;
+  getMyProfile(): Promise<Profile | null>;
+  updateMyProfile(p: Partial<Pick<Profile, "display_name" | "avatar">>): Promise<void>;
+  addRocketStars(n: number): Promise<void>;
+  saveQuizScore(score: number): Promise<void>;
+
+  // DELUXE
+  getMyMembership(): Promise<Membership | null>;
+  /** Startet die Bezahlung und liefert die Adresse der Bezahlseite. */
+  startCheckout(lang: string): Promise<string>;
+  /** Prüft nach der Rückkehr von der Bezahlseite, ob bezahlt wurde. */
+  confirmCheckout(sessionId: string): Promise<boolean>;
+
+  // Admin: Mitglieder
+  listMembers(): Promise<Member[]>;
+  adminSetMembership(userId: string, active: boolean): Promise<void>;
+  adminSetBlocked(userId: string, blocked: boolean): Promise<void>;
 
   isAdmin(): Promise<boolean>;
   login(email: string, password: string): Promise<void>;

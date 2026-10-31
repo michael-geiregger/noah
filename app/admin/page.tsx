@@ -8,8 +8,9 @@ import { AdminProducts } from "./AdminProducts";
 import { AdminVideos } from "./AdminVideos";
 import { AdminOrders } from "./AdminOrders";
 import { AdminComments } from "./AdminComments";
+import { AdminMembers } from "./AdminMembers";
 
-type Tab = "products" | "videos" | "orders" | "comments";
+type Tab = "products" | "videos" | "orders" | "comments" | "members";
 
 export default function AdminPage() {
   const { t } = useI18n();
@@ -49,6 +50,7 @@ export default function AdminPage() {
     { key: "videos", label: `🎬 ${t("tabVideos")}` },
     { key: "orders", label: `📦 ${t("tabOrders")}` },
     { key: "comments", label: `💬 ${t("tabComments")}` },
+    { key: "members", label: `👥 ${t("tabMembers")}` },
   ];
 
   return (
@@ -81,6 +83,7 @@ export default function AdminPage() {
       {tab === "videos" && <AdminVideos />}
       {tab === "orders" && <AdminOrders />}
       {tab === "comments" && <AdminComments />}
+      {tab === "members" && <AdminMembers />}
     </>
   );
 }

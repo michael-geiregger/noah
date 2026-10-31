@@ -10,7 +10,9 @@
 | 🎮 Spielen | Quiz, Rätsel, Mini-Simulationen (Planeten-Sprung, Wippe, Stromkreis) |
 | 🛒 Shop | Noahs Erfindungen ansehen, mit Sternen bewerten, bestellen, kommentieren |
 | 🎬 Videos | Videos nach Themen (hochgeladen oder als YouTube-Link) mit Kommentaren |
-| 🔧 Admin | Erfindungen und Videos anlegen, Bestellungen bearbeiten, Kommentare freigeben |
+| 💎 DELUXE | Einmalig 10,50 € per Karte (Stripe). Jede Zahlung wird in der Datenbank gespeichert |
+| 🪪 Erfinder-Ausweis | Eigenes Konto mit Avatar, Rang, Abzeichen; Raketen-Sterne und Quiz-Bestwert werden gespeichert |
+| 🔧 Admin | Erfindungen und Videos anlegen, Bestellungen bearbeiten, Kommentare freigeben, Mitglieder verwalten |
 
 Dazu: Hell/Dunkel-Modus, Sprachen Deutsch/Englisch/Japanisch, läuft auf Handy, Tablet und PC.
 Kommentare von anderen erscheinen erst, wenn Noah sie im Admin-Bereich freigibt.
@@ -49,6 +51,35 @@ Tipp: ein langes Passwort aus mehreren Wörtern wählen, z. B. `Rakete-Mond-Hebe
    - `NEXT_PUBLIC_SUPABASE_URL` = Project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon public key
 3. *Deploy*. Fertig! Jede Änderung auf `main` geht automatisch live.
+
+### 3. DELUXE einrichten (Konten + Bezahlung)
+**Supabase**
+1. **SQL Editor** → `supabase/deluxe.sql` einfügen → *Run*.
+2. **Authentication → Sign In / Providers**: *Allow new users to sign up* wieder **einschalten**.
+   (Sicher: Admin-Rechte gibt es weiterhin nur für E-Mails in der Admin-Liste.)
+3. Dort auch **Confirm email**: Der eingebaute Mail-Versand von Supabase schafft nur ganz wenige Mails pro Stunde.
+   Für den Anfang *Confirm email* ausschalten – oder später einen eigenen Mail-Dienst (SMTP, z. B. Resend) eintragen.
+4. **Authentication → URL Configuration**: *Site URL* = eure Vercel-Adresse (z. B. `https://tpwe.vercel.app`).
+5. **Project Settings → API Keys**: den **secret / service_role** Key kopieren.
+
+**Stripe** (Konto auf den Namen eines Erwachsenen, zuerst im **Testmodus**)
+1. **Developers → API keys**: *Secret key* (`sk_test_…`) kopieren.
+2. **Developers → Webhooks → Add endpoint**: `https://EURE-ADRESSE/api/stripe-webhook`,
+   Ereignisse `checkout.session.completed` und `checkout.session.async_payment_succeeded`.
+   Danach das *Signing secret* (`whsec_…`) kopieren.
+
+**Vercel → Settings → Environment Variables** (danach *Redeploy*!)
+| Key | Wert |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | secret / service_role Key aus Supabase |
+| `STRIPE_SECRET_KEY` | `sk_test_…` (später `sk_live_…`) |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_…` |
+
+⚠️ Diese drei Schlüssel sind geheim: nur bei Vercel eintragen, nie mit `NEXT_PUBLIC_` beginnen lassen, nie weitergeben.
+
+**Testen**: Konto anlegen → DELUXE → mit Testkarte `4242 4242 4242 4242`, beliebiges Datum in der Zukunft, beliebige Prüfziffer.
+**Echt verkaufen**: Stripe-Konto aktivieren, auf *Live* umschalten, Live-Key + neuen Live-Webhook eintragen, Redeploy.
+Vorher die Platzhalter auf `/rechtliches` (Impressum, AGB, Widerruf, Datenschutz) ausfüllen.
 
 ### Auf dem Handy wie eine App
 Seite öffnen → Teilen → **Zum Home-Bildschirm**.

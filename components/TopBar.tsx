@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ADMIN_CHANGED } from "@/lib/adminEvents";
 import { getApi } from "@/lib/data";
+import { useAccount } from "@/lib/useAccount";
 import { LANGS, LANG_LABEL, useI18n, type DictKey } from "@/lib/i18n";
 
 const LINKS: { href: string; icon: string; label: DictKey }[] = [
@@ -12,6 +13,7 @@ const LINKS: { href: string; icon: string; label: DictKey }[] = [
   { href: "/spielen", icon: "🎮", label: "navPlay" },
   { href: "/shop", icon: "🛒", label: "navShop" },
   { href: "/videos", icon: "🎬", label: "navVideos" },
+  { href: "/deluxe", icon: "💎", label: "navDeluxe" },
 ];
 
 const ADMIN_LINK = { href: "/admin", icon: "🔧", label: "navAdmin" as DictKey };
@@ -22,6 +24,7 @@ export function TopBar() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const { profile } = useAccount();
 
   // Der Admin-Knopf erscheint nur, wenn Noah angemeldet ist.
   useEffect(() => {
@@ -74,6 +77,9 @@ export function TopBar() {
               </button>
             ))}
           </div>
+          <Link href="/konto" className={`account-btn ${isActive("/konto") ? "active" : ""}`} aria-label={t("navAccount")} title={t("navAccount")}>
+            {profile ? profile.avatar : "👤"}
+          </Link>
           <div className="seg">
             <button onClick={toggleTheme} aria-label={theme === "dark" ? t("themeLight") : t("themeDark")}>
               {theme === "dark" ? "☀️" : "🌙"}
