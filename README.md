@@ -12,6 +12,10 @@
 | 🎬 Videos | Videos nach Themen (hochgeladen oder als YouTube-Link) mit Kommentaren |
 | 💎 DELUXE | Einmalig 10,50 € per Karte (Stripe). Jede Zahlung wird in der Datenbank gespeichert |
 | 🪪 Erfinder-Ausweis | Eigenes Konto mit Avatar, Rang, Abzeichen; Raketen-Sterne und Quiz-Bestwert werden gespeichert |
+| 🏆 Bestenliste & Challenge | DELUXE: Ranglisten (Woche/aller Zeiten), Noah legt Wochen-Challenges mit Preis an |
+| 🤖 Professor Zahnrad | DELUXE: kindgerechter KI-Erfinder-Lehrer (Claude), 20 Fragen pro Tag, alle Fragen sieht Noah im Admin |
+| 🪙 TPWE-Taler | DELUXE: 1 Taler pro Stern/Quiz-Punkt, im Taler-Shop gegen Noahs Belohnungen tauschen |
+| 📌 Erfinder-Pinnwand | DELUXE: Ideen teilen – jeder Beitrag erscheint erst nach Noahs Freigabe |
 | 🔧 Admin | Erfindungen und Videos anlegen, Bestellungen bearbeiten, Kommentare freigeben, Mitglieder verwalten |
 
 Dazu: Hell/Dunkel-Modus, Sprachen Deutsch/Englisch/Japanisch, läuft auf Handy, Tablet und PC.
@@ -80,6 +84,15 @@ Tipp: ein langes Passwort aus mehreren Wörtern wählen, z. B. `Rakete-Mond-Hebe
 **Testen**: Konto anlegen → DELUXE → mit Testkarte `4242 4242 4242 4242`, beliebiges Datum in der Zukunft, beliebige Prüfziffer.
 **Echt verkaufen**: Stripe-Konto aktivieren, auf *Live* umschalten, Live-Key + neuen Live-Webhook eintragen, Redeploy.
 Vorher die Platzhalter auf `/rechtliches` (Impressum, AGB, Widerruf, Datenschutz) ausfüllen.
+
+### 4. DELUXE-Extras einrichten
+1. **Supabase → SQL Editor**: `supabase/extras.sql` einfügen → *Run*.
+2. **Professor Zahnrad**: auf <https://platform.claude.com> ein Konto anlegen, Guthaben aufladen
+   (z. B. 5 $ reichen für sehr viele Kinderfragen), unter *API Keys* einen Schlüssel erstellen.
+   In **Vercel** als `ANTHROPIC_API_KEY` eintragen → *Redeploy*. Am besten dort auch ein monatliches Ausgabenlimit setzen.
+
+Alle Sicherheitsregeln (wer was lesen/ändern darf) sind in den SQL-Dateien festgelegt und wurden
+gegen eine echte PostgreSQL-Datenbank getestet.
 
 ### Auf dem Handy wie eine App
 Seite öffnen → Teilen → **Zum Home-Bildschirm**.

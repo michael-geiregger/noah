@@ -260,3 +260,39 @@ input[type="range"] { padding: 0; accent-color: var(--primary); height: 28px; }
   border: 2px solid var(--border); text-decoration: none; font-size: 1.2rem; background: var(--surface);
 }
 .account-btn.active { border-color: var(--primary); }
+
+/* Bestenliste */
+.challenge-card { border-color: var(--accent); border-width: 3px; }
+.ranking { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.ranking li {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
+  background: var(--surface); border: 2px solid var(--border);
+}
+.ranking li.me { border-color: var(--primary); background: var(--surface-2); }
+.ranking .place { width: 34px; text-align: center; font-weight: 900; font-size: 1.2rem; }
+.ranking .who { flex: 1; display: flex; align-items: center; gap: 6px; font-weight: 800; min-width: 0; flex-wrap: wrap; }
+.ranking .pts { font-weight: 900; white-space: nowrap; }
+
+/* Professor Zahnrad */
+.bubble { border-radius: 18px; padding: 10px 14px; max-width: 92%; }
+.bubble p { margin: 0; }
+.me-bubble { align-self: flex-end; background: var(--primary); color: var(--primary-ink); font-weight: 700; }
+.prof-bubble { align-self: flex-start; background: var(--surface-2); display: flex; gap: 10px; align-items: flex-start; }
+.prof-face { font-size: 1.8rem; line-height: 1; }
+.prof-face.spin { display: inline-block; animation: spin 1.2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .prof-face.spin { animation: none; } }
+
+/* Taler */
+.taler-balance { text-align: center; border-color: var(--accent); border-width: 3px; max-width: 520px; margin: 0 auto; }
+.coin-count { font-size: 3rem; font-weight: 900; }
+
+/* Pinnwand */
+.pinboard { display: grid; gap: 18px; margin-top: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+.pin-note {
+  position: relative; background: #fff6a8; color: #1f2a44; border-radius: 6px; padding: 18px 14px 14px;
+  box-shadow: 0 6px 14px rgba(31, 42, 68, 0.15);
+}
+.pin-note::before { content: "📌"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 1.3rem; }
+.pin-note .muted { color: #4a5578; }
+.pin-note .pill { background: #fff; }

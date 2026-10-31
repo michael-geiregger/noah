@@ -1,6 +1,22 @@
 // Online-Modus: alle Daten liegen in Supabase und sind auf jedem Gerät gleich.
 import { createClient } from "@supabase/supabase-js";
-import type { Comment, DataApi, Member, Membership, Order, Product, Profile, Rating, Video } from "./types";
+import type {
+  AiQuestion,
+  BoardPost,
+  Challenge,
+  Comment,
+  DataApi,
+  LeaderRow,
+  Member,
+  Membership,
+  Order,
+  Product,
+  Profile,
+  Rating,
+  Redemption,
+  Reward,
+  Video,
+} from "./types";
 
 const BUCKET = "media";
 
@@ -152,6 +168,74 @@ export function createSupabaseApi(url: string, anonKey: string): DataApi {
     async confirmCheckout(sessionId) {
       const { member } = await callApi<{ member: boolean }>("/api/checkout/confirm", { sessionId });
       return member;
+    },
+
+    async recordResult(game, points) {
+      if (!(await me()) || points <= 0) return;
+      check(await sb.from("game_results").insert({ game, points }));
+    },
+    async leaderboard(game, since, until) {
+      const rows = check(
+        await sb.rpc("leaderboard", { p_game: game, p_since: since ?? "-infinity", p_until: until ?? "infinity" }),
+      ) as LeaderRow[];
+      return rows.map((r) => ({ ...r, points: Number(r.points) }));
+    },
+    async listChallenges() {
+      return check(await sb.from("challenges").select("*").order("starts_at", { ascending: false })) as Challenge[];
+    },
+    async saveChallenge(c) {
+      const { id, created_at: _c, ...rest } = c;
+      if (id) check(await sb.from("challenges").update(rest).eq("id", id));
+      else check(await sb.from("challenges").insert(rest));
+    },
+    async deleteChallenge(id) {
+      check(await sb.from("challenges").delete().eq("id", id));
+    },
+    async listRewards(includeInactive) {
+      let q = sb.from("rewards").select("*").order("cost");
+      if (!includeInactive) q = q.eq("active", true);
+      return check(await q) as Reward[];
+    },
+    async saveReward(r) {
+      const { id, created_at: _c, ...rest } = r;
+      if (id) check(await sb.from("rewards").update(rest).eq("id", id));
+      else check(await sb.from("rewards").insert(rest));
+    },
+    async deleteReward(id) {
+      check(await sb.from("rewards").delete().eq("id", id));
+    },
+    async talerBalance() {
+      if (!(await me())) return 0;
+      return Number(check(await sb.rpc("taler_balance")) ?? 0);
+    },
+    async redeemReward(id) {
+      const { error } = await sb.rpc("redeem_reward", { p_reward: id });
+      if (error) throw new Error(error.message.includes("not-enough-taler") ? "not-enough-taler" : error.message);
+    },
+    async listRedemptions() {
+      return check(await sb.from("redemptions").select("*").order("created_at", { ascending: false })) as Redemption[];
+    },
+    async setRedemptionStatus(id, status) {
+      check(await sb.from("redemptions").update({ status }).eq("id", id));
+    },
+    async listBoardPosts() {
+      return check(await sb.from("board_posts").select("*").order("created_at", { ascending: false }).limit(200)) as BoardPost[];
+    },
+    async addBoardPost(text) {
+      const { error } = await sb.from("board_posts").insert({ text });
+      if (error) throw new Error(error.message.includes("too-many-posts") ? "too-many-posts" : error.message);
+    },
+    async setBoardPostApproved(id, approved) {
+      check(await sb.from("board_posts").update({ approved }).eq("id", id));
+    },
+    async deleteBoardPost(id) {
+      check(await sb.from("board_posts").delete().eq("id", id));
+    },
+    async askProfessor(question, lang, history) {
+      return callApi<{ answer: string; remaining: number }>("/api/professor", { question, lang, history });
+    },
+    async listAiQuestions() {
+      return check(await sb.from("ai_questions").select("*").order("created_at", { ascending: false }).limit(200)) as AiQuestion[];
     },
 
     async listMembers() {

@@ -80,6 +80,59 @@ export type Member = Profile & { membership: Membership | null };
 
 export type SignUpResult = "ok" | "confirm-email";
 
+export type GameName = "rocket" | "quiz";
+
+export type LeaderRow = { display_name: string; avatar: string; points: number; is_me: boolean };
+
+export type Challenge = {
+  id: string;
+  created_at: string;
+  title: string;
+  title_en?: string | null;
+  title_ja?: string | null;
+  prize?: string | null;
+  game: GameName;
+  starts_at: string;
+  ends_at: string;
+};
+
+export type Reward = {
+  id: string;
+  created_at: string;
+  title: string;
+  title_en?: string | null;
+  title_ja?: string | null;
+  emoji: string;
+  cost: number;
+  active: boolean;
+};
+
+export type RedemptionStatus = "neu" | "erledigt" | "abgelehnt";
+
+export type Redemption = {
+  id: string;
+  created_at: string;
+  user_id: string;
+  reward_id: string | null;
+  reward_title: string;
+  cost: number;
+  status: RedemptionStatus;
+};
+
+export type BoardPost = {
+  id: string;
+  created_at: string;
+  user_id: string;
+  author_name: string;
+  author_avatar: string;
+  text: string;
+  approved: boolean;
+};
+
+export type AiQuestion = { id: number; created_at: string; user_id: string; question: string; answer: string; lang: string };
+
+export type ProfessorTurn = { question: string; answer: string };
+
 export interface DataApi {
   mode: "demo" | "online";
 
@@ -121,6 +174,26 @@ export interface DataApi {
   startCheckout(lang: string): Promise<string>;
   /** Prüft nach der Rückkehr von der Bezahlseite, ob bezahlt wurde. */
   confirmCheckout(sessionId: string): Promise<boolean>;
+
+  // DELUXE-Extras
+  recordResult(game: GameName, points: number): Promise<void>;
+  leaderboard(game: GameName, since?: string, until?: string): Promise<LeaderRow[]>;
+  listChallenges(): Promise<Challenge[]>;
+  saveChallenge(c: Partial<Challenge>): Promise<void>;
+  deleteChallenge(id: string): Promise<void>;
+  listRewards(includeInactive?: boolean): Promise<Reward[]>;
+  saveReward(r: Partial<Reward>): Promise<void>;
+  deleteReward(id: string): Promise<void>;
+  talerBalance(): Promise<number>;
+  redeemReward(id: string): Promise<void>;
+  listRedemptions(): Promise<Redemption[]>;
+  setRedemptionStatus(id: string, status: RedemptionStatus): Promise<void>;
+  listBoardPosts(): Promise<BoardPost[]>;
+  addBoardPost(text: string): Promise<void>;
+  setBoardPostApproved(id: string, approved: boolean): Promise<void>;
+  deleteBoardPost(id: string): Promise<void>;
+  askProfessor(question: string, lang: string, history: ProfessorTurn[]): Promise<{ answer: string; remaining: number }>;
+  listAiQuestions(): Promise<AiQuestion[]>;
 
   // Admin: Mitglieder
   listMembers(): Promise<Member[]>;

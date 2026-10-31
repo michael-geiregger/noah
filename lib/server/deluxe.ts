@@ -64,6 +64,20 @@ export async function grantFromSession(session: Stripe.Checkout.Session): Promis
   return true;
 }
 
+/** DELUXE-Mitglied (nicht gesperrt) oder Admin? */
+export async function canUseDeluxe(user: { id: string; email: string | null }) {
+  const db = supabaseAdmin();
+  const [{ data: membership }, { data: profile }, { data: admins }] = await Promise.all([
+    db.from("memberships").select("user_id").eq("user_id", user.id).maybeSingle(),
+    db.from("profiles").select("blocked").eq("id", user.id).maybeSingle(),
+    db.from("admins").select("email"),
+  ]);
+  // exakter Vergleich (ohne Platzhalter wie % oder _)
+  const email = user.email?.toLowerCase();
+  if (email && (admins ?? []).some((a: { email: string }) => a.email.toLowerCase() === email)) return true;
+  return !!membership && !profile?.blocked;
+}
+
 export function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }

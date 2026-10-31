@@ -10,11 +10,14 @@ import { jingle } from "@/lib/sound";
 import { useAccount } from "@/lib/useAccount";
 import { formatPrice } from "@/lib/useData";
 
-const PERKS: { icon: string; title: DictKey; sub: DictKey; soon?: boolean }[] = [
+const PERKS: { icon: string; title: DictKey; sub: DictKey; href?: string; soon?: boolean }[] = [
+  { icon: "🏆", title: "dlxPerkBoard", sub: "dlxPerkBoardSub", href: "/deluxe/bestenliste" },
+  { icon: "🤖", title: "dlxPerkProf", sub: "dlxPerkProfSub", href: "/deluxe/professor" },
+  { icon: "🪙", title: "dlxPerkTaler", sub: "dlxPerkTalerSub", href: "/deluxe/taler" },
+  { icon: "📌", title: "dlxPerkPinboard", sub: "dlxPerkPinboardSub", href: "/deluxe/pinnwand" },
   { icon: "📡", title: "dlxPerkRadio", sub: "dlxPerkRadioSub", soon: true },
   { icon: "📞", title: "dlxPerkPrivate", sub: "dlxPerkPrivateSub", soon: true },
   { icon: "💎", title: "dlxPerkBadge", sub: "dlxPerkBadgeSub" },
-  { icon: "🎁", title: "dlxPerkMore", sub: "dlxPerkMoreSub" },
 ];
 
 export default function DeluxePage() {
@@ -93,15 +96,28 @@ function Deluxe() {
       )}
       {cancelled && !isDeluxe && <p className="card muted">{t("dlxCancelled")}</p>}
 
+      {isDeluxe && <h2 className="section-title">💎 {t("dlxHub")}</h2>}
       <div className="grid">
-        {PERKS.map((p) => (
-          <div key={p.title} className="tile yellow" style={{ minHeight: 0 }}>
-            <span className="icon">{p.icon}</span>
-            <span className="title">{t(p.title)}</span>
-            <span className="sub">{t(p.sub)}</span>
-            {p.soon && <span className="pill" style={{ alignSelf: "flex-start" }}>⏳ {t("dlxSoon")}</span>}
-          </div>
-        ))}
+        {PERKS.map((p) => {
+          const inner = (
+            <>
+              <span className="icon">{p.icon}</span>
+              <span className="title">{t(p.title)}</span>
+              <span className="sub">{t(p.sub)}</span>
+              {p.soon && <span className="pill" style={{ alignSelf: "flex-start" }}>⏳ {t("dlxSoon")}</span>}
+              {isDeluxe && p.href && <span className="btn small" style={{ alignSelf: "flex-start", marginTop: "auto" }}>{t("open")} →</span>}
+            </>
+          );
+          return isDeluxe && p.href ? (
+            <Link key={p.title} href={p.href} className="tile blue" style={{ minHeight: 0 }}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={p.title} className="tile yellow" style={{ minHeight: 0 }}>
+              {inner}
+            </div>
+          );
+        })}
       </div>
 
       <div className="card deluxe-buy">

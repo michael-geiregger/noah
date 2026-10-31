@@ -149,8 +149,8 @@ export default function RocketPage() {
     setResult(r);
     if (r.stars) {
       // Auf dem Erfinder-Ausweis speichern (wenn angemeldet)
-      getApi()
-        .addRocketStars(r.stars)
+      const api = getApi();
+      Promise.all([api.addRocketStars(r.stars), api.recordResult("rocket", r.stars)])
         .then(notifyAuthChanged)
         .catch(() => {});
       setTotalStars((old) => {

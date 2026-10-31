@@ -1,6 +1,23 @@
 // Demo-Modus: alles wird nur im Browser gespeichert (localStorage).
 // Gut zum Ausprobieren – andere Geräte sehen diese Daten nicht.
-import type { Comment, DataApi, Member, Membership, Order, Product, Profile, Rating, Video } from "./types";
+import type {
+  AiQuestion,
+  BoardPost,
+  Challenge,
+  Comment,
+  DataApi,
+  GameName,
+  LeaderRow,
+  Member,
+  Membership,
+  Order,
+  Product,
+  Profile,
+  Rating,
+  Redemption,
+  Reward,
+  Video,
+} from "./types";
 
 export const DEMO_PASSWORD = "tpwe";
 
@@ -14,7 +31,19 @@ type Db = {
   orders: Order[];
   users?: DemoUser[];
   memberships?: Membership[];
+  results?: { user_id: string; game: GameName; points: number; created_at: string }[];
+  challenges?: Challenge[];
+  rewards?: Reward[];
+  redemptions?: Redemption[];
+  posts?: BoardPost[];
+  aiQuestions?: AiQuestion[];
 };
+
+const DEMO_REWARDS: Omit<Reward, "id" | "created_at">[] = [
+  { title: "TPWE-Sticker", title_en: "TPWE sticker", title_ja: "TPWEステッカー", emoji: "🏷️", cost: 20, active: true },
+  { title: "Gruß von Noah im nächsten Video", title_en: "Shout-out in Noah's next video", title_ja: "次の動画でノアからあいさつ", emoji: "🎬", cost: 60, active: true },
+  { title: "Noah erfindet etwas für dich", title_en: "Noah invents something for you", title_ja: "ノアがきみのために発明する", emoji: "💡", cost: 100, active: true },
+];
 
 const KEY = "tpwe-demo-db";
 const ADMIN_KEY = "tpwe-demo-admin";
@@ -94,7 +123,20 @@ function currentUser(db: Db): DemoUser | null {
 
 const toProfile = ({ password: _p, ...profile }: DemoUser): Profile => profile;
 
+function isMember(db: Db, me: DemoUser | null) {
+  return !!me && !me.blocked && !!db.memberships?.some((m) => m.user_id === me.id);
+}
+
+function balance(db: Db, userId: string) {
+  const earned = (db.results ?? []).filter((r) => r.user_id === userId).reduce((s, r) => s + r.points, 0);
+  const spent = (db.redemptions ?? [])
+    .filter((r) => r.user_id === userId && r.status !== "abgelehnt")
+    .reduce((s, r) => s + r.cost, 0);
+  return earned - spent;
+}
+
 export function createLocalApi(): DataApi {
+  const isAdminLocal = () => localStorage.getItem(ADMIN_KEY) === "1";
   const updateMe = (patch: Partial<Profile>) => {
     const db = load();
     const me = currentUser(db);
@@ -252,6 +294,136 @@ export function createLocalApi(): DataApi {
     },
     async confirmCheckout() {
       return !!(await this.getMyMembership());
+    },
+
+    async recordResult(game, points) {
+      const db = load();
+      const me = currentUser(db);
+      if (!me || points <= 0) return;
+      (db.results ??= []).push({ user_id: me.id, game, points, created_at: now() });
+      save(db);
+    },
+    async leaderboard(game, since, until) {
+      const db = load();
+      const me = currentUser(db);
+      if (!isMember(db, me) && !isAdminLocal()) return [];
+      const totals = new Map<string, number>();
+      for (const r of db.results ?? []) {
+        if (r.game !== game || (since && r.created_at < since) || (until && r.created_at >= until)) continue;
+        totals.set(r.user_id, (totals.get(r.user_id) ?? 0) + r.points);
+      }
+      return [...totals]
+        .map(([id, points]): LeaderRow | null => {
+          const u = db.users?.find((x) => x.id === id);
+          if (!u || u.blocked || !db.memberships?.some((m) => m.user_id === id)) return null;
+          return { display_name: u.display_name, avatar: u.avatar, points, is_me: id === me?.id };
+        })
+        .filter((r): r is LeaderRow => !!r && r.points > 0)
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 20);
+    },
+    async listChallenges() {
+      const db = load();
+      if (!isMember(db, currentUser(db)) && !isAdminLocal()) return [];
+      return [...(db.challenges ?? [])].sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+    },
+    async saveChallenge(c) {
+      const db = load();
+      db.challenges = upsert(db.challenges ?? [], c);
+      save(db);
+    },
+    async deleteChallenge(id) {
+      const db = load();
+      db.challenges = (db.challenges ?? []).filter((c) => c.id !== id);
+      save(db);
+    },
+    async listRewards(includeInactive) {
+      const db = load();
+      if (!db.rewards) {
+        db.rewards = DEMO_REWARDS.map((r) => ({ ...r, id: uid(), created_at: now() }));
+        save(db);
+      }
+      return db.rewards.filter((r) => includeInactive || r.active).sort((a, b) => a.cost - b.cost);
+    },
+    async saveReward(r) {
+      const db = load();
+      db.rewards = upsert(db.rewards ?? [], r);
+      save(db);
+    },
+    async deleteReward(id) {
+      const db = load();
+      db.rewards = (db.rewards ?? []).filter((r) => r.id !== id);
+      save(db);
+    },
+    async talerBalance() {
+      const db = load();
+      const me = currentUser(db);
+      return me ? balance(db, me.id) : 0;
+    },
+    async redeemReward(id) {
+      const db = load();
+      const me = currentUser(db);
+      if (!me || !isMember(db, me)) throw new Error("not-member");
+      const reward = db.rewards?.find((r) => r.id === id && r.active);
+      if (!reward) throw new Error("not-found");
+      if (balance(db, me.id) < reward.cost) throw new Error("not-enough-taler");
+      (db.redemptions ??= []).push({
+        id: uid(), created_at: now(), user_id: me.id, reward_id: reward.id, reward_title: reward.title, cost: reward.cost, status: "neu",
+      });
+      save(db);
+    },
+    async listRedemptions() {
+      const db = load();
+      const me = currentUser(db);
+      return (db.redemptions ?? []).filter((r) => isAdminLocal() || r.user_id === me?.id).sort(byNewest);
+    },
+    async setRedemptionStatus(id, status) {
+      const db = load();
+      db.redemptions = (db.redemptions ?? []).map((r) => (r.id === id ? { ...r, status } : r));
+      save(db);
+    },
+    async listBoardPosts() {
+      const db = load();
+      const me = currentUser(db);
+      const member = isMember(db, me);
+      return (db.posts ?? [])
+        .filter((p) => isAdminLocal() || p.user_id === me?.id || (p.approved && member))
+        .sort(byNewest);
+    },
+    async addBoardPost(text) {
+      const db = load();
+      const me = currentUser(db);
+      if (!me || !isMember(db, me)) throw new Error("not-member");
+      (db.posts ??= []).push({
+        id: uid(), created_at: now(), user_id: me.id, author_name: me.display_name, author_avatar: me.avatar, text: text.slice(0, 300), approved: false,
+      });
+      save(db);
+    },
+    async setBoardPostApproved(id, approved) {
+      const db = load();
+      db.posts = (db.posts ?? []).map((p) => (p.id === id ? { ...p, approved } : p));
+      save(db);
+    },
+    async deleteBoardPost(id) {
+      const db = load();
+      db.posts = (db.posts ?? []).filter((p) => p.id !== id);
+      save(db);
+    },
+    async askProfessor(question, lang) {
+      const answers: Record<string, string> = {
+        de: "🧪 Demo-Modus: Ich bin noch nicht an mein Erfinder-Gehirn angeschlossen. Sobald die App online ist und einen KI-Schlüssel hat, beantworte ich deine Frage richtig!",
+        en: "🧪 Demo mode: I'm not connected to my inventor brain yet. Once the app is online with an AI key, I'll answer properly!",
+        ja: "🧪 デモモード：まだ発明家の頭脳につながっていないよ。オンラインになったら、ちゃんと答えるね！",
+      };
+      const db = load();
+      const me = currentUser(db);
+      const answer = answers[lang] ?? answers.de;
+      if (me) (db.aiQuestions ??= []).push({ id: Date.now(), created_at: now(), user_id: me.id, question, answer, lang });
+      save(db);
+      return { answer, remaining: 20 };
+    },
+    async listAiQuestions() {
+      return [...(load().aiQuestions ?? [])].sort(byNewest);
     },
 
     async listMembers() {

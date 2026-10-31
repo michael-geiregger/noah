@@ -16,7 +16,11 @@ export default function QuizPage() {
 
   // Bestes Ergebnis auf dem Erfinder-Ausweis speichern
   useEffect(() => {
-    if (done) getApi().saveQuizScore(score).then(notifyAuthChanged).catch(() => {});
+    if (!done) return;
+    const api = getApi();
+    Promise.all([api.saveQuizScore(score), api.recordResult("quiz", score)])
+      .then(notifyAuthChanged)
+      .catch(() => {});
   }, [done, score]);
 
   const choose = (i: number) => {
