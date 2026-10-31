@@ -20,8 +20,9 @@
 | 📞 Privat-Gespräch | DELUXE: nur auf Anfrage – Noah bestätigt und legt die Uhrzeit fest, ein Erwachsener muss dabei sein |
 | 🔧 Admin | Erfindungen und Videos anlegen, Bestellungen bearbeiten, Kommentare freigeben, Mitglieder verwalten |
 
-**Bezahlpflicht:** Ohne DELUXE (einmalig 10,50 €) sieht man nur die Startseite mit „Anmelden“ und „DELUXE kaufen“.
-Spielen, Shop, Videos und alle Extras sind erst danach offen – in der App *und* in der Datenbank. Noah (Admin) kommt immer rein.
+**Frei vs. DELUXE:** Spielen, Shop (ansehen, bestellen, bewerten, kommentieren) und Videos sind für alle frei.
+Nur der DELUXE-Bereich (Funkraum, Professor Zahnrad, Bestenliste, Taler, Pinnwand) ist ohne Bezahlung (einmalig 10,50 €) gesperrt –
+in der App *und* in der Datenbank. Noah (Admin) kommt immer überall rein.
 
 Dazu: Hell/Dunkel-Modus, Sprachen Deutsch/Englisch/Japanisch, läuft auf Handy, Tablet und PC.
 Kommentare von anderen erscheinen erst, wenn Noah sie im Admin-Bereich freigibt.
@@ -92,7 +93,7 @@ Vorher die Platzhalter auf `/rechtliches` (Impressum, AGB, Widerruf, Datenschutz
 
 ### 4. DELUXE-Extras und Bezahlpflicht einrichten
 1. **Supabase → SQL Editor**: `supabase/extras.sql` einfügen → *Run*.
-   Danach `supabase/paywall.sql` einfügen → *Run* (ohne DELUXE gibt es dann keine Daten mehr).
+   Falls ihr früher `paywall.sql` ausgeführt habt: `supabase/normal-frei.sql` ausführen (macht Shop & Videos wieder für alle frei).
 2. **Professor Zahnrad**: auf <https://platform.claude.com> ein Konto anlegen, Guthaben aufladen
    (z. B. 5 $ reichen für sehr viele Kinderfragen), unter *API Keys* einen Schlüssel erstellen.
    In **Vercel** als `ANTHROPIC_API_KEY` eintragen → *Redeploy*. Am besten dort auch ein monatliches Ausgabenlimit setzen.

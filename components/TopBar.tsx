@@ -24,7 +24,7 @@ export function TopBar() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   const [isAdmin, setIsAdmin] = useState(false);
-  const { profile, hasAccess } = useAccount();
+  const { profile } = useAccount();
 
   // Der Admin-Knopf erscheint nur, wenn Noah angemeldet ist.
   useEffect(() => {
@@ -62,7 +62,7 @@ export function TopBar() {
           </Link>
         </div>
         <nav className="nav">
-          {(isAdmin ? [...LINKS, ADMIN_LINK] : hasAccess ? LINKS : LINKS.filter((l) => l.href === "/" || l.href === "/deluxe")).map((l) => (
+          {(isAdmin ? [...LINKS, ADMIN_LINK] : LINKS).map((l) => (
             <Link key={l.href} href={l.href} className={isActive(l.href) ? "active" : ""}>
               <span aria-hidden>{l.icon}</span>
               <span className="label">{t(l.label)}</span>

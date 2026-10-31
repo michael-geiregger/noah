@@ -297,11 +297,15 @@ input[type="range"] { padding: 0; accent-color: var(--primary); height: 28px; }
 .pin-note .muted { color: #4a5578; }
 .pin-note .pill { background: #fff; }
 
-/* Gesperrte Vorschau-Kacheln */
-.tile.locked { position: relative; }
-.tile.locked .lock { position: absolute; top: 14px; right: 16px; font-size: 1.4rem; }
-.tile.locked .icon { filter: grayscale(0.35); }
-
-/* Funkraum */
-.rules { background: var(--surface-2); display: flex; flex-direction: column; gap: 8px; box-shadow: none; }
-.video-call { width: 100%; height: min(75vh, 720px); min-height: 420px; border: 0; border-radius: 16px; background: #000; }
+/* DELUXE-Banner auf der Startseite */
+.deluxe-banner {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 20px; padding: 20px;
+  border-radius: var(--radius); text-decoration: none; color: #1f2a44; box-shadow: var(--shadow);
+  background: linear-gradient(135deg, #fff3b0 0%, #ffd43b 50%, #fff8d6 100%); border: 3px solid #b58900;
+  transition: transform 0.12s ease;
+}
+.deluxe-banner:hover { transform: translateY(-3px); }
+.deluxe-banner .icon { font-size: 3rem; }
+.deluxe-banner .title { display: block; font-weight: 900; font-size: 1.4rem; }
+.deluxe-banner .sub { display: block; color: #4a5578; }
+.deluxe-banner .btn.yellow { background: #1f2a44; color: #ffd43b; }
