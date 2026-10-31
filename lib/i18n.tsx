@@ -483,6 +483,14 @@ const dict = {
   admDecline: { de: "Ablehnen", en: "Decline", ja: "ことわる" },
   admDone: { de: "Erledigt", en: "Done", ja: "かんりょう" },
 
+  // Bezahlpflicht
+  payTitle: { de: "Nur mit TPWE DELUXE", en: "TPWE DELUXE only", ja: "TPWEデラックスだけ" },
+  paySub: {
+    de: "Hol dir DELUXE für einmalig 10,50 € und entdecke alles: Spiele, Simulationen, Noahs Erfindungen, Videos und mehr!",
+    en: "Get DELUXE for a one-time 10.50 € and discover everything: games, simulations, Noah's inventions, videos and more!",
+    ja: "1回10.50ユーロでデラックスになって、ゲーム・シミュレーション・ノアの発明・動画をぜんぶ楽しもう！",
+  },
+  landingWhat: { de: "Das wartet auf dich", en: "What's waiting for you", ja: "こんなことができるよ" },
   // Rechtliches
   legalTitle: { de: "Rechtliches", en: "Legal", ja: "法的情報" },
 } satisfies Record<string, Tri>;

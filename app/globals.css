@@ -216,7 +216,7 @@ details.translations[open] { display: flex; flex-direction: column; gap: 10px; }
 .footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 24px 16px 40px; }
 
 input[type="range"] { padding: 0; accent-color: var(--primary); height: 28px; }
-.grid-3 { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.grid-3 { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
 
 /* Erfinder-Ausweis */
 .idcard {
@@ -296,3 +296,8 @@ input[type="range"] { padding: 0; accent-color: var(--primary); height: 28px; }
 .pin-note::before { content: "📌"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 1.3rem; }
 .pin-note .muted { color: #4a5578; }
 .pin-note .pill { background: #fff; }
+
+/* Gesperrte Vorschau-Kacheln */
+.tile.locked { position: relative; }
+.tile.locked .lock { position: absolute; top: 14px; right: 16px; font-size: 1.4rem; }
+.tile.locked .icon { filter: grayscale(0.35); }

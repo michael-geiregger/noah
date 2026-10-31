@@ -18,6 +18,9 @@
 | 📌 Erfinder-Pinnwand | DELUXE: Ideen teilen – jeder Beitrag erscheint erst nach Noahs Freigabe |
 | 🔧 Admin | Erfindungen und Videos anlegen, Bestellungen bearbeiten, Kommentare freigeben, Mitglieder verwalten |
 
+**Bezahlpflicht:** Ohne DELUXE (einmalig 10,50 €) sieht man nur die Startseite mit „Anmelden“ und „DELUXE kaufen“.
+Spielen, Shop, Videos und alle Extras sind erst danach offen – in der App *und* in der Datenbank. Noah (Admin) kommt immer rein.
+
 Dazu: Hell/Dunkel-Modus, Sprachen Deutsch/Englisch/Japanisch, läuft auf Handy, Tablet und PC.
 Kommentare von anderen erscheinen erst, wenn Noah sie im Admin-Bereich freigibt.
 
@@ -85,8 +88,9 @@ Tipp: ein langes Passwort aus mehreren Wörtern wählen, z. B. `Rakete-Mond-Hebe
 **Echt verkaufen**: Stripe-Konto aktivieren, auf *Live* umschalten, Live-Key + neuen Live-Webhook eintragen, Redeploy.
 Vorher die Platzhalter auf `/rechtliches` (Impressum, AGB, Widerruf, Datenschutz) ausfüllen.
 
-### 4. DELUXE-Extras einrichten
+### 4. DELUXE-Extras und Bezahlpflicht einrichten
 1. **Supabase → SQL Editor**: `supabase/extras.sql` einfügen → *Run*.
+   Danach `supabase/paywall.sql` einfügen → *Run* (ohne DELUXE gibt es dann keine Daten mehr).
 2. **Professor Zahnrad**: auf <https://platform.claude.com> ein Konto anlegen, Guthaben aufladen
    (z. B. 5 $ reichen für sehr viele Kinderfragen), unter *API Keys* einen Schlüssel erstellen.
    In **Vercel** als `ANTHROPIC_API_KEY` eintragen → *Redeploy*. Am besten dort auch ein monatliches Ausgabenlimit setzen.
